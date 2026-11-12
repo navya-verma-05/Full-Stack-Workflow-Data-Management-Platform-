@@ -101,3 +101,4 @@ export function normalizePayloadToRecord(schemaType, payload, sourceId, eventId)
       };
   }
 }
+

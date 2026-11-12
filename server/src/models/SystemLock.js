@@ -16,3 +16,4 @@ const systemLockSchema = new mongoose.Schema(
 );
 
 export const SystemLock = mongoose.model('SystemLock', systemLockSchema);
+

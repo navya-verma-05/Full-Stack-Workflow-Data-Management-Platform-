@@ -306,3 +306,4 @@ main().catch((err) => {
   console.error('Simulator error:', err.message);
   process.exit(1);
 });
+

@@ -56,3 +56,4 @@ export async function rotateSecret(req, res, next) {
     return next(err);
   }
 }
+
