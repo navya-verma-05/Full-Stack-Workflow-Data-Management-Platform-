@@ -1,11 +1,11 @@
 import {
+  issueRefreshToken,
   loginUser,
+  logoutSession,
   refreshSession,
   registerUser,
   signAccessToken,
-  signRefreshToken,
 } from '../services/authService.js';
-import { recordAuditLog } from '../services/auditService.js';
 import {
   REFRESH_COOKIE_NAME,
   clearRefreshCookie,
@@ -22,7 +22,7 @@ export async function register(req, res, next) {
 
     if (req.isBootstrapRegistration) {
       const accessToken = signAccessToken(user);
-      const refreshToken = signRefreshToken(user);
+      const refreshToken = await issueRefreshToken(user);
       setRefreshCookie(res, refreshToken);
       return res.status(201).json({ user: user.toJSON(), accessToken });
     }
@@ -57,16 +57,9 @@ export async function refresh(req, res, next) {
 
 export async function logout(req, res, next) {
   try {
+    const token = req.cookies?.[REFRESH_COOKIE_NAME];
+    await logoutSession(token, { actor: req.user || null, req });
     clearRefreshCookie(res);
-    if (req.user) {
-      await recordAuditLog({
-        actor: req.user,
-        action: 'auth.logout',
-        resourceType: 'auth',
-        resourceId: req.user._id,
-        req,
-      });
-    }
     return res.status(200).json({ message: 'Logged out successfully' });
   } catch (err) {
     return next(err);
@@ -76,4 +69,3 @@ export async function logout(req, res, next) {
 export async function me(req, res) {
   return res.status(200).json({ user: req.user.toJSON() });
 }
-

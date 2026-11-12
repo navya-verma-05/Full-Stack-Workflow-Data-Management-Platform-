@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import request from 'supertest';
+import jwt from 'jsonwebtoken';
 import { createTestUser, getApp } from './helpers.js';
 import { User } from '../src/models/User.js';
+import { env } from '../src/config/env.js';
 
 describe('Auth Flows (Register, Login, Refresh, Logout, Me)', () => {
   it('allows bootstrapping the first user as admin when no users exist', async () => {
@@ -139,6 +141,65 @@ describe('Auth Flows (Register, Login, Refresh, Logout, Me)', () => {
     });
     expect(disabledRes.status).toBe(403);
     expect(disabledRes.body.error.code).toBe('ACCOUNT_DISABLED');
+  });
+
+  it('rejects tampered and expired JWT access tokens with 401 INVALID_TOKEN', async () => {
+    const app = getApp();
+    const { user, accessToken } = await createTestUser({
+      email: 'jwt@example.com',
+      role: 'viewer',
+    });
+
+    const parts = accessToken.split('.');
+    const tamperedToken = `${parts[0]}.${parts[1]}.tamperedsignature000`;
+
+    const tamperedRes = await request(app)
+      .get('/api/auth/me')
+      .set('Authorization', `Bearer ${tamperedToken}`);
+    expect(tamperedRes.status).toBe(401);
+    expect(tamperedRes.body.error.code).toBe('INVALID_TOKEN');
+
+    const expiredToken = jwt.sign(
+      { sub: String(user._id), role: user.role, email: user.email, type: 'access' },
+      env.JWT_ACCESS_SECRET,
+      { expiresIn: -10 }
+    );
+
+    const expiredRes = await request(app)
+      .get('/api/auth/me')
+      .set('Authorization', `Bearer ${expiredToken}`);
+    expect(expiredRes.status).toBe(401);
+    expect(expiredRes.body.error.code).toBe('INVALID_TOKEN');
+  });
+
+  it('invalidates the refresh token server-side on logout so replaying the old cookie fails with 401', async () => {
+    const app = getApp();
+    await createTestUser({
+      email: 'replay@example.com',
+      password: 'ReplayPassword123!',
+      role: 'viewer',
+    });
+
+    const loginRes = await request(app).post('/api/auth/login').send({
+      email: 'replay@example.com',
+      password: 'ReplayPassword123!',
+    });
+    expect(loginRes.status).toBe(200);
+
+    const rawCookie = loginRes.headers['set-cookie']?.[0]?.split(';')[0];
+    expect(rawCookie).toContain('refreshToken=');
+
+    const logoutRes = await request(app)
+      .post('/api/auth/logout')
+      .set('Cookie', rawCookie);
+    expect(logoutRes.status).toBe(200);
+
+    // Replay the exact pre-logout cookie directly to verify server-side revocation
+    const replayRes = await request(app)
+      .post('/api/auth/refresh')
+      .set('Cookie', rawCookie);
+    expect(replayRes.status).toBe(401);
+    expect(replayRes.body.error.code).toBe('REFRESH_TOKEN_REVOKED');
   });
 });
 

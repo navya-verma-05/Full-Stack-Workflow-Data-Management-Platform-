@@ -1,34 +1,31 @@
-# Role-Based Access Control (RBAC) & Route Permissions
+# Route Permissions Matrix (Generated from Code)
 
-## Roles
+Generated directly from:
+- [app.js](file:///c:/Users/ASUS/Desktop/projects/workflow%20and%20data%20management%20platform/server/src/app.js)
+- [healthRoutes.js](file:///c:/Users/ASUS/Desktop/projects/workflow%20and%20data%20management%20platform/server/src/routes/healthRoutes.js)
+- [authRoutes.js](file:///c:/Users/ASUS/Desktop/projects/workflow%20and%20data%20management%20platform/server/src/routes/authRoutes.js)
+- [userRoutes.js](file:///c:/Users/ASUS/Desktop/projects/workflow%20and%20data%20management%20platform/server/src/routes/userRoutes.js)
 
-| Role | Description |
-| --- | --- |
-| `admin` | Full administrative access: manage users, sources, secrets, events, records, and audit logs. |
-| `manager` | Operational write access: read all metrics/events/records/audit logs and replay failed events; cannot manage users or rotate source secrets. |
-| `viewer` | Read-only access: view metrics, events, records, and audit logs; no mutations allowed. |
+## Implemented Routes vs. Roles
 
-## Route Permissions Matrix
-
-| Method & Route | Status | Unauthenticated | `viewer` | `manager` | `admin` | Notes |
+| HTTP Method | Path | Public | `admin` | `manager` | `viewer` | Enforcing Middleware |
 | --- | --- | --- | --- | --- | --- | --- |
-| `GET /api/health` | Implemented (Phase 1) | Allowed | Allowed | Allowed | Allowed | Public liveness & DB status |
-| `POST /api/auth/register` | Implemented (Phase 2) | Bootstrap only (0 users) / 401 | 403 | 403 | Allowed | First user forced to `admin`; admin-only thereafter |
-| `POST /api/auth/login` | Implemented (Phase 2) | Allowed | Allowed | Allowed | Allowed | Issues JWT access token + `httpOnly` refresh cookie |
-| `POST /api/auth/refresh` | Implemented (Phase 2) | Cookie required (401 if missing) | Allowed (with cookie) | Allowed (with cookie) | Allowed (with cookie) | Rotates refresh cookie & issues access token |
-| `POST /api/auth/logout` | Implemented (Phase 2) | Allowed | Allowed | Allowed | Allowed | Clears `httpOnly` refresh cookie |
-| `GET /api/auth/me` | Implemented (Phase 2) | 401 | Allowed | Allowed | Allowed | Returns authenticated user profile |
-| `GET /api/users` | Implemented (Phase 2) | 401 | 403 | 403 | Allowed | Paginated user listing |
-| `GET /api/users/:id` | Implemented (Phase 2) | 401 | 403 | 403 | Allowed | Single user detail |
-| `PATCH /api/users/:id` | Implemented (Phase 2) | 401 | 403 | 403 | Allowed | Update role/active/name (blocks self-demotion) |
-| `POST /api/webhooks/:sourceId` | Planned (Phase 3) | HMAC-SHA256 signed | N/A | N/A | N/A | External system webhook ingestion |
-| `GET /api/sources` | Planned (Phase 3) | 401 | Allowed | Allowed | Allowed | List configured sources (no secrets) |
-| `POST /api/sources` | Planned (Phase 3) | 401 | 403 | 403 | Allowed | Create source (signing secret shown once) |
-| `POST /api/sources/:id/rotate-secret` | Planned (Phase 3) | 401 | 403 | 403 | Allowed | Rotate signing secret |
-| `PATCH /api/sources/:id` | Planned (Phase 3) | 401 | 403 | 403 | Allowed | Enable / disable source |
-| `POST /api/events/:id/replay` | Planned (Phase 3) | 401 | 403 | Allowed | Allowed | Replay failed/dead-lettered event |
-| `GET /api/metrics/*` | Planned (Phase 4) | 401 | Allowed | Allowed | Allowed | Aggregated metrics & time series |
-| `GET /api/events`, `GET /api/events/:id` | Planned (Phase 4) | 401 | Allowed | Allowed | Allowed | Filtered event list & processing logs |
-| `GET /api/records` | Planned (Phase 4) | 401 | Allowed | Allowed | Allowed | Normalized client records |
-| `GET /api/audit-logs` | Planned (Phase 4) | 401 | Allowed | Allowed | Allowed | Paginated audit trail |
+| `GET` | `/api/health` | Allowed | Allowed | Allowed | Allowed | None (public health endpoint) |
+| `POST` | `/api/auth/register` | Allowed **only when 0 users exist** (bootstrap first admin); Denied (`401`) afterward | Allowed | Denied (`403`) | Denied (`403`) | `authLimiter`, `allowBootstrapOrAdmin` (`authenticate` + `authorize('admin')` once `User.countDocuments() > 0`), `validate(registerSchema)` |
+| `POST` | `/api/auth/login` | Allowed | Allowed | Allowed | Allowed | `authLimiter`, `validate(loginSchema)` (no auth/RBAC middleware — credential exchange) |
+| `POST` | `/api/auth/refresh` | Denied (`401`) without valid `refreshToken` cookie | Allowed (valid cookie) | Allowed (valid cookie) | Allowed (valid cookie) | `authLimiter` + `refreshSession` server-side cookie/JWT/DB verification (no `authenticate`/`authorize` middleware) |
+| `POST` | `/api/auth/logout` | Allowed | Allowed | Allowed | Allowed | None (`logoutSession` revokes `refreshToken` cookie in DB if present and clears cookie) |
+| `GET` | `/api/auth/me` | Denied (`401`) | Allowed | Allowed | Allowed | `authenticate`, `authorize('admin', 'manager', 'viewer')` |
+| `GET` | `/api/users` | Denied (`401`) | Allowed | Denied (`403`) | Denied (`403`) | Router `authenticate`, `authorize('admin')`, `validate(listUsersSchema)` |
+| `GET` | `/api/users/:id` | Denied (`401`) | Allowed | Denied (`403`) | Denied (`403`) | Router `authenticate`, `authorize('admin')`, `validate(userIdParamSchema)` |
+| `PATCH` | `/api/users/:id` | Denied (`401`) | Allowed | Denied (`403`) | Denied (`403`) | Router `authenticate`, `authorize('admin')`, `validate(updateUserSchema)` |
 
+## Security Audit Findings on Current Routes
+
+- **Routes without authorization middleware (`authorize`)**:
+  1. `GET /api/health` — intentional public liveness & database connectivity probe.
+  2. `POST /api/auth/login` — intentional public login endpoint (rate-limited via `authLimiter`, schema-validated via `validate(loginSchema)`).
+  3. `POST /api/auth/refresh` — relies on signed `httpOnly` `refreshToken` cookie verified against the `RefreshToken` collection in MongoDB (rate-limited via `authLimiter`).
+  4. `POST /api/auth/logout` — intentionally callable without an access token so expired-access-token clients can still revoke their `refreshToken` cookie server-side and clear the browser cookie.
+  5. `POST /api/auth/register` (bootstrap case only) — intentionally permits unauthenticated `POST` **only** when `User.countDocuments() === 0` to create the initial `admin`; all subsequent calls enforce `authenticate` + `authorize('admin')`.
+- **Routes where `viewer` can write**: **None.** All mutation routes (`POST /api/auth/register` post-bootstrap, `PATCH /api/users/:id`) enforce `authorize('admin')` and reject `viewer` with `403 FORBIDDEN`.

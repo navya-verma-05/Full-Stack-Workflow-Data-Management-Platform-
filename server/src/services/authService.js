@@ -1,8 +1,11 @@
+import crypto from 'node:crypto';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { env } from '../config/env.js';
 import { User } from '../models/User.js';
+import { RefreshToken } from '../models/RefreshToken.js';
 import { AppError } from '../utils/AppError.js';
+import { sha256Hex } from '../utils/crypto.js';
 import { recordAuditLog } from './auditService.js';
 
 const BCRYPT_ROUNDS = env.NODE_ENV === 'test' ? 6 : 12;
@@ -24,6 +27,7 @@ export function signRefreshToken(user) {
   return jwt.sign(
     {
       sub: String(user._id),
+      jti: crypto.randomUUID(),
       type: 'refresh',
     },
     env.JWT_REFRESH_SECRET,
@@ -31,11 +35,34 @@ export function signRefreshToken(user) {
   );
 }
 
-export async function registerUser({ name, email, password, role }, { actor = null, isBootstrap = false, req = null } = {}) {
+export async function issueRefreshToken(user) {
+  const token = signRefreshToken(user);
+  const decoded = jwt.decode(token);
+  const expiresAt = decoded?.exp
+    ? new Date(decoded.exp * 1000)
+    : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+  await RefreshToken.create({
+    userId: user._id,
+    tokenHash: sha256Hex(token),
+    expiresAt,
+  });
+
+  return token;
+}
+
+export async function registerUser(
+  { name, email, password, role },
+  { actor = null, isBootstrap = false, req = null } = {}
+) {
   if (isBootstrap) {
     const count = await User.countDocuments();
     if (count > 0) {
-      throw new AppError('Bootstrap registration is closed; admin authentication required', 403, 'FORBIDDEN');
+      throw new AppError(
+        'Bootstrap registration is closed; admin authentication required',
+        403,
+        'FORBIDDEN'
+      );
     }
   }
 
@@ -86,7 +113,7 @@ export async function loginUser({ email, password }, { req = null } = {}) {
   await user.save();
 
   const accessToken = signAccessToken(user);
-  const refreshToken = signRefreshToken(user);
+  const refreshToken = await issueRefreshToken(user);
 
   await recordAuditLog({
     actor: user,
@@ -120,15 +147,64 @@ export async function refreshSession(refreshToken) {
     throw new AppError('Invalid refresh token', 401, 'INVALID_REFRESH_TOKEN');
   }
 
+  const tokenHash = sha256Hex(refreshToken);
+  const storedToken = await RefreshToken.findOne({ tokenHash });
+
+  if (!storedToken) {
+    throw new AppError('Refresh token is not recognized', 401, 'INVALID_REFRESH_TOKEN');
+  }
+
+  if (storedToken.revokedAt) {
+    // Reuse of a rotated/logged-out refresh token: revoke all active sessions for this user.
+    await RefreshToken.updateMany(
+      { userId: storedToken.userId, revokedAt: null },
+      { revokedAt: new Date() }
+    );
+    throw new AppError('Refresh token has been revoked', 401, 'REFRESH_TOKEN_REVOKED');
+  }
+
   const user = await User.findById(payload.sub);
   if (!user || !user.active) {
+    storedToken.revokedAt = new Date();
+    await storedToken.save();
     throw new AppError('Account not found or inactive', 401, 'UNAUTHORIZED');
   }
+
+  const newRefreshToken = await issueRefreshToken(user);
+  storedToken.revokedAt = new Date();
+  storedToken.replacedByHash = sha256Hex(newRefreshToken);
+  await storedToken.save();
 
   return {
     user: user.toJSON(),
     accessToken: signAccessToken(user),
-    refreshToken: signRefreshToken(user),
+    refreshToken: newRefreshToken,
   };
 }
 
+export async function logoutSession(refreshToken, { actor = null, req = null } = {}) {
+  let resolvedActor = actor;
+
+  if (refreshToken) {
+    const tokenHash = sha256Hex(refreshToken);
+    const storedToken = await RefreshToken.findOneAndUpdate(
+      { tokenHash, revokedAt: null },
+      { revokedAt: new Date() },
+      { new: true }
+    );
+
+    if (storedToken && !resolvedActor) {
+      resolvedActor = await User.findById(storedToken.userId);
+    }
+  }
+
+  if (resolvedActor) {
+    await recordAuditLog({
+      actor: resolvedActor,
+      action: 'auth.logout',
+      resourceType: 'auth',
+      resourceId: resolvedActor._id,
+      req,
+    });
+  }
+}
