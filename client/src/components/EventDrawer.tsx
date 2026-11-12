@@ -212,3 +212,4 @@ export function EventDrawer({ eventId, initialEvent, onClose }: EventDrawerProps
     </div>
   );
 }
+

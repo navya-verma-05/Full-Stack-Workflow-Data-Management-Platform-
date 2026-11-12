@@ -278,3 +278,4 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
     </div>
   );
 }
+

@@ -76,3 +76,4 @@ export function formatDurationMs(ms: number): string {
   if (ms < 60_000) return `${(ms / 1000).toFixed(ms % 1000 === 0 ? 0 : 1)} s`;
   return `${Math.round(ms / 60_000)} m`;
 }
+

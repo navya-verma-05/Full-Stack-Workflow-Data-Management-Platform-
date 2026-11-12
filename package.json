@@ -1,0 +1,23 @@
+{
+  "name": "workflow-platform",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Portfolio-grade webhook ingestion, validation, retry queue, and operational telemetry platform",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "dev:server": "npm --prefix server run dev",
+    "dev:client": "npm --prefix client run dev",
+    "start:server": "npm --prefix server start",
+    "build": "npm --prefix client run build",
+    "seed": "npm --prefix server run seed",
+    "test:server": "npm --prefix server test",
+    "test:client": "npm --prefix client test",
+    "test": "npm --prefix server test && npm --prefix client test",
+    "lint": "npm --prefix server run lint && npm --prefix client run lint",
+    "format:check": "npm --prefix server run format:check && npm --prefix client run format:check"
+  }
+}
+
