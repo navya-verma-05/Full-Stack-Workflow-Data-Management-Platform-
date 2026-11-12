@@ -1,6 +1,13 @@
 import mongoose from 'mongoose';
 
-export const EVENT_STATUSES = ['received', 'valid', 'invalid', 'processed', 'failed'];
+export const EVENT_STATUSES = [
+  'received',
+  'valid',
+  'invalid',
+  'processed',
+  'failed',
+  'dead_letter',
+];
 
 const eventErrorSchema = new mongoose.Schema(
   {
@@ -70,6 +77,15 @@ const eventSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    processingLockUntil: {
+      type: Date,
+      default: null,
+    },
+    lockedBy: {
+      type: String,
+      maxlength: 128,
+      default: null,
+    },
     receivedAt: {
       type: Date,
       default: Date.now,
@@ -87,6 +103,7 @@ const eventSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
+    suppressReservedKeysWarning: true,
     toJSON: {
       transform(_doc, ret) {
         delete ret.__v;
@@ -106,8 +123,9 @@ eventSchema.index({ status: 1, receivedAt: -1 });
 // Compound index on (sourceId, receivedAt): optimizes per-source event queries and time-series charts.
 eventSchema.index({ sourceId: 1, receivedAt: -1 });
 
-// Compound index on (status, nextRetryAt): enables the async retry worker to poll due jobs efficiently.
-eventSchema.index({ status: 1, nextRetryAt: 1 });
+// Compound index on (status, nextRetryAt, processingLockUntil): enables atomic findOneAndUpdate
+// job claims by the Mongo-backed retry worker without duplicate concurrent execution.
+eventSchema.index({ status: 1, nextRetryAt: 1, processingLockUntil: 1 });
 
 // Single-field descending index on receivedAt: speeds up global chronological pagination and date ranges.
 eventSchema.index({ receivedAt: -1 });

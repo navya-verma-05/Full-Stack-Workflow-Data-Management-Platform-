@@ -41,6 +41,7 @@ describe('Core App, Health & Payload Limits', () => {
     const app = getApp();
     const res = await request(app)
       .post('/api/auth/register')
+      .set('x-bootstrap-token', process.env.BOOTSTRAP_TOKEN)
       .send({
         name: 'n'.repeat(121),
         email: 'admin@example.com',

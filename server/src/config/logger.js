@@ -8,6 +8,8 @@ export const logger = pino({
       'req.headers.authorization',
       'req.headers.cookie',
       'req.headers["x-webhook-signature"]',
+      'req.headers["x-api-key"]',
+      'req.headers["x-bootstrap-token"]',
       'res.headers["set-cookie"]',
       '*.password',
       '*.passwordHash',
@@ -18,6 +20,7 @@ export const logger = pino({
       '*.apiKeyHash',
       '*.refreshToken',
       '*.accessToken',
+      '*.bootstrapToken',
     ],
     censor: '[REDACTED]',
   },
@@ -34,4 +37,3 @@ export const logger = pino({
       }
     : {}),
 });
-

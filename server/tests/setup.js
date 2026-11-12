@@ -12,7 +12,10 @@ process.env.CLIENT_ORIGIN = 'http://localhost:5173';
 process.env.JWT_ACCESS_SECRET = 'test-access-secret-key-at-least-32-characters-long';
 process.env.JWT_REFRESH_SECRET = 'test-refresh-secret-key-at-least-32-characters-long';
 process.env.SIGNING_SECRET_ENCRYPTION_KEY = 'test-signing-encryption-key-at-least-32-chars';
+process.env.BOOTSTRAP_TOKEN = 'test-bootstrap-token-one-time-secret';
 process.env.REQUEST_BODY_LIMIT = '100kb';
+process.env.RETRY_BASE_DELAY_MS = '25';
+process.env.RETRY_MAX_ATTEMPTS = '3';
 process.env.LOG_LEVEL = 'silent';
 process.env.MONGOMS_DOWNLOAD_DIR = path.resolve(__dirname, '../.cache/mongodb-binaries');
 

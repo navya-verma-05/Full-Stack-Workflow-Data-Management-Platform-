@@ -12,7 +12,11 @@ export const webhookMetadataSchema = z
 
 export const baseWebhookHeadersSchema = z.object({
   'x-webhook-signature': z.string().trim().min(1).max(256),
-  'x-webhook-timestamp': z.string().trim().min(1).max(32),
+  'x-webhook-timestamp': z
+    .string()
+    .trim()
+    .regex(/^\d{1,15}$/, 'x-webhook-timestamp must be a Unix epoch timestamp in seconds')
+    .max(32),
   'x-idempotency-key': z.string().trim().min(1).max(256),
 });
 
@@ -91,3 +95,9 @@ export const partnerWebhookPayloadSchema = z
   })
   .strict();
 
+export const PAYLOAD_SCHEMAS_BY_TYPE = {
+  generic: genericWebhookPayloadSchema,
+  web_form: webFormWebhookPayloadSchema,
+  crm: crmWebhookPayloadSchema,
+  partner: partnerWebhookPayloadSchema,
+};

@@ -59,3 +59,26 @@ export function constantTimeEqualHex(hexA, hexB) {
   return crypto.timingSafeEqual(bufA, bufB);
 }
 
+export function constantTimeEqualUtf8(a, b) {
+  if (typeof a !== 'string' || typeof b !== 'string' || a.length === 0 || b.length === 0) {
+    return false;
+  }
+  const bufA = Buffer.from(a, 'utf8');
+  const bufB = Buffer.from(b, 'utf8');
+  if (bufA.length !== bufB.length) {
+    return false;
+  }
+  return crypto.timingSafeEqual(bufA, bufB);
+}
+
+export function computeWebhookHmacHex(signingSecret, timestamp, rawBodyBuffer) {
+  const prefix = Buffer.from(`${timestamp}.`, 'utf8');
+  const payload = Buffer.isBuffer(rawBodyBuffer)
+    ? rawBodyBuffer
+    : Buffer.from(String(rawBodyBuffer || ''), 'utf8');
+  return crypto
+    .createHmac('sha256', signingSecret)
+    .update(Buffer.concat([prefix, payload]))
+    .digest('hex');
+}
+

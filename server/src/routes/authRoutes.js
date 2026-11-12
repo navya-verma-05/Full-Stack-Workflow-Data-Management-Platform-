@@ -1,8 +1,11 @@
 import { Router } from 'express';
 import { User } from '../models/User.js';
+import { env } from '../config/env.js';
 import { authenticate, authorize } from '../middleware/auth.js';
 import { authLimiter } from '../middleware/rateLimiter.js';
 import { validate } from '../middleware/validate.js';
+import { AppError } from '../utils/AppError.js';
+import { constantTimeEqualUtf8 } from '../utils/crypto.js';
 import { loginSchema, registerSchema } from '../validators/authValidators.js';
 import * as authController from '../controllers/authController.js';
 
@@ -12,6 +15,19 @@ async function allowBootstrapOrAdmin(req, res, next) {
   try {
     const userCount = await User.countDocuments();
     if (userCount === 0) {
+      const providedToken = req.headers['x-bootstrap-token'];
+      if (
+        typeof providedToken !== 'string' ||
+        !constantTimeEqualUtf8(providedToken, env.BOOTSTRAP_TOKEN)
+      ) {
+        return next(
+          new AppError(
+            'Valid x-bootstrap-token header is required for initial admin bootstrap',
+            403,
+            'INVALID_BOOTSTRAP_TOKEN'
+          )
+        );
+      }
       req.isBootstrapRegistration = true;
       return next();
     }

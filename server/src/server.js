@@ -2,9 +2,11 @@ import { env } from './config/env.js';
 import { connectDB, disconnectDB } from './config/db.js';
 import { logger } from './config/logger.js';
 import { createApp } from './app.js';
+import { startWorker, stopWorker } from './jobs/eventWorker.js';
 
 async function start() {
   await connectDB();
+  startWorker();
 
   const app = createApp();
   const server = app.listen(env.PORT, () => {
@@ -13,6 +15,7 @@ async function start() {
 
   const shutdown = async (signal) => {
     logger.info({ signal }, 'Shutdown signal received');
+    stopWorker();
     server.close(async () => {
       await disconnectDB();
       process.exit(0);

@@ -3,25 +3,62 @@ import request from 'supertest';
 import jwt from 'jsonwebtoken';
 import { createTestUser, getApp } from './helpers.js';
 import { User } from '../src/models/User.js';
-import { env } from '../src/config/env.js';
+import { env, parseEnv } from '../src/config/env.js';
 
 describe('Auth Flows (Register, Login, Refresh, Logout, Me)', () => {
-  it('allows bootstrapping the first user as admin when no users exist', async () => {
+  it('forces COOKIE_SECURE=true when NODE_ENV=production', () => {
+    const prodEnv = parseEnv({
+      ...process.env,
+      NODE_ENV: 'production',
+      COOKIE_SECURE: 'false',
+    });
+    expect(prodEnv.COOKIE_SECURE).toBe(true);
+  });
+
+  it('rejects bootstrap registration without valid x-bootstrap-token', async () => {
     const app = getApp();
     const res = await request(app).post('/api/auth/register').send({
       name: 'Initial Admin',
       email: 'admin@example.com',
       password: 'AdminPassword123!',
-      role: 'viewer', // First user is forced to admin regardless of requested role
     });
 
-    expect(res.status).toBe(201);
-    expect(res.body.user.email).toBe('admin@example.com');
-    expect(res.body.user.role).toBe('admin');
-    expect(res.body.user.passwordHash).toBeUndefined();
-    expect(res.body.accessToken).toBeTypeOf('string');
-    expect(res.headers['set-cookie']).toBeDefined();
-    expect(res.headers['set-cookie'][0]).toContain('HttpOnly');
+    expect(res.status).toBe(403);
+    expect(res.body.error.code).toBe('INVALID_BOOTSTRAP_TOKEN');
+  });
+
+  it('allows bootstrapping the first user as admin with valid x-bootstrap-token and prevents concurrent double-bootstrap', async () => {
+    const app = getApp();
+    const [resA, resB] = await Promise.all([
+      request(app)
+        .post('/api/auth/register')
+        .set('x-bootstrap-token', process.env.BOOTSTRAP_TOKEN)
+        .send({
+          name: 'Initial Admin A',
+          email: 'admin-a@example.com',
+          password: 'AdminPassword123!',
+          role: 'viewer',
+        }),
+      request(app)
+        .post('/api/auth/register')
+        .set('x-bootstrap-token', process.env.BOOTSTRAP_TOKEN)
+        .send({
+          name: 'Initial Admin B',
+          email: 'admin-b@example.com',
+          password: 'AdminPassword123!',
+          role: 'viewer',
+        }),
+    ]);
+
+    const statuses = [resA.status, resB.status].sort((a, b) => a - b);
+    expect(statuses).toEqual([201, 403]);
+
+    const winner = resA.status === 201 ? resA : resB;
+    expect(winner.body.user.role).toBe('admin');
+    expect(winner.body.user.passwordHash).toBeUndefined();
+    expect(winner.body.accessToken).toBeTypeOf('string');
+    expect(winner.headers['set-cookie']).toBeDefined();
+    expect(winner.headers['set-cookie'][0]).toContain('HttpOnly');
   });
 
   it('rejects unauthenticated registration once an admin exists', async () => {

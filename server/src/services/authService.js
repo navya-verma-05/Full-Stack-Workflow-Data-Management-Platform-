@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken';
 import { env } from '../config/env.js';
 import { User } from '../models/User.js';
 import { RefreshToken } from '../models/RefreshToken.js';
+import { SystemLock } from '../models/SystemLock.js';
 import { AppError } from '../utils/AppError.js';
 import { sha256Hex } from '../utils/crypto.js';
 import { recordAuditLog } from './auditService.js';
@@ -55,7 +56,22 @@ export async function registerUser(
   { name, email, password, role },
   { actor = null, isBootstrap = false, req = null } = {}
 ) {
+  let acquiredBootstrapLock = false;
   if (isBootstrap) {
+    try {
+      await SystemLock.create({ _id: 'bootstrap_admin' });
+      acquiredBootstrapLock = true;
+    } catch (lockErr) {
+      if (lockErr?.code === 11000) {
+        throw new AppError(
+          'Bootstrap registration is closed; admin authentication required',
+          403,
+          'FORBIDDEN'
+        );
+      }
+      throw lockErr;
+    }
+
     const count = await User.countDocuments();
     if (count > 0) {
       throw new AppError(
@@ -66,32 +82,39 @@ export async function registerUser(
     }
   }
 
-  const existing = await User.findOne({ email });
-  if (existing) {
-    throw new AppError('Email is already registered', 409, 'EMAIL_EXISTS');
+  try {
+    const existing = await User.findOne({ email });
+    if (existing) {
+      throw new AppError('Email is already registered', 409, 'EMAIL_EXISTS');
+    }
+
+    const assignedRole = isBootstrap ? 'admin' : role;
+    const passwordHash = await bcrypt.hash(password, BCRYPT_ROUNDS);
+
+    const user = await User.create({
+      name,
+      email,
+      passwordHash,
+      role: assignedRole,
+      active: true,
+    });
+
+    await recordAuditLog({
+      actor: actor || user,
+      action: isBootstrap ? 'auth.bootstrap_admin' : 'user.create',
+      resourceType: 'user',
+      resourceId: user._id,
+      metadata: { email: user.email, role: user.role },
+      req,
+    });
+
+    return user;
+  } catch (err) {
+    if (acquiredBootstrapLock) {
+      await SystemLock.deleteOne({ _id: 'bootstrap_admin' }).catch(() => {});
+    }
+    throw err;
   }
-
-  const assignedRole = isBootstrap ? 'admin' : role;
-  const passwordHash = await bcrypt.hash(password, BCRYPT_ROUNDS);
-
-  const user = await User.create({
-    name,
-    email,
-    passwordHash,
-    role: assignedRole,
-    active: true,
-  });
-
-  await recordAuditLog({
-    actor: actor || user,
-    action: isBootstrap ? 'auth.bootstrap_admin' : 'user.create',
-    resourceType: 'user',
-    resourceId: user._id,
-    metadata: { email: user.email, role: user.role },
-    req,
-  });
-
-  return user;
 }
 
 export async function loginUser({ email, password }, { req = null } = {}) {

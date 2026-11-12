@@ -10,6 +10,9 @@ import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 import healthRoutes from './routes/healthRoutes.js';
 import authRoutes from './routes/authRoutes.js';
 import userRoutes from './routes/userRoutes.js';
+import sourceRoutes from './routes/sourceRoutes.js';
+import webhookRoutes from './routes/webhookRoutes.js';
+import eventRoutes from './routes/eventRoutes.js';
 
 export function createApp() {
   const app = express();
@@ -45,6 +48,9 @@ export function createApp() {
   app.use('/api/health', healthRoutes);
   app.use('/api/auth', apiLimiter, authRoutes);
   app.use('/api/users', apiLimiter, userRoutes);
+  app.use('/api/sources', apiLimiter, sourceRoutes);
+  app.use('/api/events', apiLimiter, eventRoutes);
+  app.use('/api/webhooks', webhookRoutes);
 
   app.use(notFoundHandler);
   app.use(errorHandler);
