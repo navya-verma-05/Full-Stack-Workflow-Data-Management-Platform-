@@ -36,7 +36,7 @@ Generated directly from:
 | `GET` | `/api/metrics/summary` | Denied (`401`) | Allowed | Allowed | Allowed | Router `authenticate`, `authorize('admin', 'manager', 'viewer')`, `validate(metricsSummarySchema)` |
 | `GET` | `/api/metrics/timeseries` | Denied (`401`) | Allowed | Allowed | Allowed | Router `authenticate`, `authorize('admin', 'manager', 'viewer')`, `validate(metricsTimeSeriesSchema)` |
 | `GET` | `/api/records` | Denied (`401`) | Allowed | Allowed | Allowed | Router `authenticate`, `authorize('admin', 'manager', 'viewer')`, `validate(listRecordsSchema)` |
-| `GET` | `/api/audit-logs` | Denied (`401`) | Allowed | Allowed | Allowed | Router `authenticate`, `authorize('admin', 'manager', 'viewer')`, `validate(listAuditLogsSchema)` |
+| `GET` | `/api/audit-logs` | Denied (`401`) | Allowed | Denied (`403`) | Denied (`403`) | Router `authenticate`, `authorize('admin')`, `validate(listAuditLogsSchema)` |
 | `POST` | `/api/webhooks/:sourceId` | HMAC-SHA256 signed (`401` otherwise) | N/A | N/A | N/A | `webhookLimiter`, `validate(webhookParamsSchema)`, `verifyWebhookSignatureAndTimestamp` |
 
 ## Viewer Write-Access Check

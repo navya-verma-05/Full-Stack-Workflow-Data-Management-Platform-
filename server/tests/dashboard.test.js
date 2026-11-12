@@ -206,10 +206,21 @@ describe('Phase 4 Dashboard API, Aggregations, Filters, Pagination & Secret Reda
     expect(detail.body.event.recordId.clientName).toBe('Alice (VIP)');
     assertNoSecretsInJson(detail.body);
 
-    // Audit logs endpoint works and respects filters
-    const audits = await request(app)
+    // Audit logs endpoint is admin-only (manager and viewer denied with 403)
+    const manager = await createTestUser({ email: 'manager@example.com', role: 'manager' });
+    const viewerAudit = await request(app)
       .get('/api/audit-logs?action=source.update')
       .set('Authorization', `Bearer ${viewer.accessToken}`);
+    expect(viewerAudit.status).toBe(403);
+
+    const managerAudit = await request(app)
+      .get('/api/audit-logs?action=source.update')
+      .set('Authorization', `Bearer ${manager.accessToken}`);
+    expect(managerAudit.status).toBe(403);
+
+    const audits = await request(app)
+      .get('/api/audit-logs?action=source.update')
+      .set('Authorization', `Bearer ${admin.accessToken}`);
     expect(audits.status).toBe(200);
     expect(audits.body.items).toHaveLength(1);
     assertNoSecretsInJson(audits.body);
@@ -238,3 +249,4 @@ describe('Phase 4 Dashboard API, Aggregations, Filters, Pagination & Secret Reda
     }
   });
 });
+

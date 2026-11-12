@@ -17,6 +17,8 @@ dist/
 build/
 **/dist/
 **/build/
+*.tsbuildinfo
+**/*.tsbuildinfo
 
 # Test coverage & artifacts
 coverage/

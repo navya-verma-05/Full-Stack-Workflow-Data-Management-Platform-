@@ -26,20 +26,21 @@
 
 ## Observed `explain('executionStats')` Plans
 
-Executed against MongoDB 7 (`workflow_platform_explain`, dropped afterward):
+Executed against MongoDB 7 on the seeded `workflow_platform` dataset (240 events, 180 records, 5 audit logs):
 
-| Query Pattern | Winning Plan | Index Used | Keys Examined | Docs Examined |
-| --- | --- | --- | --- | --- |
-| `Event.find({ sourceId, idempotencyKey })` | `PROJECTION_SIMPLE` -> `IXSCAN` | `sourceId_1_idempotencyKey_1` | 1 | 1 |
-| `Event.find({ status: 'processed' }).sort({ receivedAt: -1 }).limit(20)` | `LIMIT` -> `IXSCAN` | `status_1_receivedAt_-1` | 1 | 1 |
-| `Event.find({ sourceId }).sort({ receivedAt: -1 }).limit(20)` | `LIMIT` -> `IXSCAN` | `sourceId_1_receivedAt_-1` | 1 | 1 |
-| `Event.find({ status: { $in: ['valid', 'failed'] }, nextRetryAt: { $lte: now, $ne: null } }).sort({ nextRetryAt: 1 }).limit(1)` | `LIMIT` -> `IXSCAN` | `status_1_nextRetryAt_1_processingLockUntil_1` | 0 | 0 |
-| `RecordModel.find({ sourceId }).sort({ createdAt: -1 }).limit(20)` | `LIMIT` -> `IXSCAN` | `sourceId_1_createdAt_-1` | 1 | 1 |
-| `RecordModel.find({ $text: { $search: 'Explain' } })` | `TEXT_MATCH` | `clientName_text_clientEmail_text_company_text_externalId_text` | 1 | 1 |
-| `AuditLog.find().sort({ createdAt: -1 }).limit(20)` | `LIMIT` -> `IXSCAN` | `createdAt_-1` | 1 | 1 |
+| Query Pattern | Winning Plan | Index Used | Returned | Keys Examined | Docs Examined |
+| --- | --- | --- | --- | --- | --- |
+| `Event.find({ sourceId, idempotencyKey })` | `PROJECTION_SIMPLE` -> `IXSCAN` | `sourceId_1_idempotencyKey_1` | 1 | 1 | 1 |
+| `Event.find({ status: 'processed' }).sort({ receivedAt: -1 }).limit(20)` | `LIMIT` -> `IXSCAN` | `status_1_receivedAt_-1` | 20 | 20 | 20 |
+| `Event.find({ sourceId }).sort({ receivedAt: -1 }).limit(20)` | `LIMIT` -> `IXSCAN` | `sourceId_1_receivedAt_-1` | 20 | 20 | 20 |
+| `Event.find({ status: { $in: ['valid', 'failed'] }, nextRetryAt: { $lte: cutoff, $ne: null } }).sort({ nextRetryAt: 1 }).limit(1)` | `LIMIT` -> `IXSCAN` | `status_1_nextRetryAt_1_processingLockUntil_1` | 1 | 2 | 1 |
+| `RecordModel.find({ sourceId }).sort({ createdAt: -1 }).limit(20)` | `LIMIT` -> `IXSCAN` | `sourceId_1_createdAt_-1` | 20 | 20 | 20 |
+| `RecordModel.find({ $text: { $search: 'Northstar' } })` | `TEXT_MATCH` | `clientName_text_clientEmail_text_company_text_externalId_text` | 24 | 24 | 24 |
+| `AuditLog.find().sort({ createdAt: -1 }).limit(20)` | `LIMIT` -> `IXSCAN` | `createdAt_-1` | 5 | 5 | 5 |
 
 ## Aggregation Pipelines Used in Phase 4
 
 - `GET /api/metrics/summary` ([metricsService.js](file:///c:/Users/ASUS/Desktop/projects/workflow%20and%20data%20management%20platform/server/src/services/metricsService.js)): Uses `$match` (leveraging `receivedAt_-1` or `sourceId_1_receivedAt_-1`) followed by a single-pass `$facet` with `byStatus` (`$group` by status), `bySource` (`$group` by `sourceId` + `$lookup` projecting only `name`, `schemaType`, `active`), and `latency` (`$avg` of `processedAt - receivedAt`).
 - `GET /api/metrics/timeseries` ([metricsService.js](file:///c:/Users/ASUS/Desktop/projects/workflow%20and%20data%20management%20platform/server/src/services/metricsService.js)): Uses `$match` + `$group` bucketed by `$dateToString` (`%Y-%m-%d` or `%Y-%m-%dT%H:00:00Z` UTC) + `$sort: { _id: 1 }`.
 - `GET /api/events` & `GET /api/records` ([dashboardService.js](file:///c:/Users/ASUS/Desktop/projects/workflow%20and%20data%20management%20platform/server/src/services/dashboardService.js)): Use `$match` (with escaped regex via `escapeRegex()` for partial substring search) + `$sort` + `$facet` (`items` with `$skip`/`$limit` + `$lookup` to `sources` projecting only non-secret fields, plus `totalCount`).
+

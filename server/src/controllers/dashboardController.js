@@ -40,3 +40,4 @@ export async function getAuditLogs(req, res, next) {
     return next(err);
   }
 }
+

@@ -10,9 +10,10 @@ router.use(authenticate);
 
 router.get(
   '/',
-  authorize('admin', 'manager', 'viewer'),
+  authorize('admin'),
   validate(listAuditLogsSchema),
   dashboardController.getAuditLogs
 );
 
 export default router;
+
