@@ -86,6 +86,13 @@ const eventSchema = new mongoose.Schema(
       maxlength: 128,
       default: null,
     },
+    simulatedFailuresRemaining: {
+      type: Number,
+      default: 0,
+      min: 0,
+      max: 3,
+      select: false,
+    },
     receivedAt: {
       type: Date,
       default: Date.now,

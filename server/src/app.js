@@ -13,6 +13,9 @@ import userRoutes from './routes/userRoutes.js';
 import sourceRoutes from './routes/sourceRoutes.js';
 import webhookRoutes from './routes/webhookRoutes.js';
 import eventRoutes from './routes/eventRoutes.js';
+import metricsRoutes from './routes/metricsRoutes.js';
+import recordRoutes from './routes/recordRoutes.js';
+import auditRoutes from './routes/auditRoutes.js';
 
 export function createApp() {
   const app = express();
@@ -50,6 +53,9 @@ export function createApp() {
   app.use('/api/users', apiLimiter, userRoutes);
   app.use('/api/sources', apiLimiter, sourceRoutes);
   app.use('/api/events', apiLimiter, eventRoutes);
+  app.use('/api/metrics', apiLimiter, metricsRoutes);
+  app.use('/api/records', apiLimiter, recordRoutes);
+  app.use('/api/audit-logs', apiLimiter, auditRoutes);
   app.use('/api/webhooks', webhookRoutes);
 
   app.use(notFoundHandler);

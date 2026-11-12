@@ -15,6 +15,21 @@ let pollTimer = null;
 let isPolling = false;
 
 export async function defaultEventProcessor(event, source) {
+  if (!source.active) {
+    throw new Error('Source is disabled downstream');
+  }
+
+  if (env.NODE_ENV !== 'production') {
+    const simulated = await Event.findOneAndUpdate(
+      { _id: event._id, simulatedFailuresRemaining: { $gt: 0 } },
+      { $inc: { simulatedFailuresRemaining: -1 } },
+      { new: false }
+    );
+    if (simulated) {
+      throw new Error('Simulated downstream transient failure (503)');
+    }
+  }
+
   const { valid, data, errors } = validateWebhookPayload(source.schemaType, event.payload);
   if (!valid) {
     const err = new Error('Event payload failed validation during processing');

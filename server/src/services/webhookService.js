@@ -82,6 +82,14 @@ export async function ingestWebhook({ sourceId, headers, rawBody, body }) {
     rawBody,
   });
 
+  let simulatedFailures = 0;
+  if (env.NODE_ENV !== 'production' && headers['x-simulate-failures'] !== undefined) {
+    const parsedSim = Number(headers['x-simulate-failures']);
+    if (Number.isInteger(parsedSim) && parsedSim >= 1 && parsedSim <= 3) {
+      simulatedFailures = parsedSim;
+    }
+  }
+
   let event;
   try {
     event = await Event.create({
@@ -90,6 +98,7 @@ export async function ingestWebhook({ sourceId, headers, rawBody, body }) {
       status: 'received',
       idempotencyKey,
       maxAttempts: env.RETRY_MAX_ATTEMPTS,
+      simulatedFailuresRemaining: simulatedFailures,
       receivedAt: new Date(),
       processingLogs: [
         {

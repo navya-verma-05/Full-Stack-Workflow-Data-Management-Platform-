@@ -148,6 +148,7 @@ async function sendWebhook(source, scenario, payload, opts = {}) {
       'x-webhook-timestamp': signed.timestamp,
       'x-webhook-signature': signature,
       'x-idempotency-key': idempotencyKey,
+      ...(opts.extraHeaders || {}),
     },
     body: rawBody,
   });
@@ -290,6 +291,42 @@ async function main() {
       { timestampSec: Math.floor(Date.now() / 1000) - 900 }
     )
   );
+
+  // 5. Downstream failure -> exponential backoff retry -> success
+  const retryResult = await sendWebhook(
+    sources.partner,
+    'downstream_failure_then_retry_then_success',
+    {
+      partnerRef: `prt-${runId}-retry`,
+      customer: {
+        name: 'Liam OConnor',
+        email: 'liam@retryco.test',
+        organization: 'RetryCo',
+      },
+      items: [{ sku: 'RETRY-SKU-1', quantity: 1, unitPrice: 750 }],
+      currency: 'USD',
+    },
+    { extraHeaders: { 'x-simulate-failures': '1' } }
+  );
+  results.push(retryResult);
+
+  if (retryResult.eventId && retryResult.eventId !== '-') {
+    let finalEvent = null;
+    for (let i = 0; i < 15; i += 1) {
+      await new Promise((r) => setTimeout(r, 500));
+      const detail = await apiJson(`/events/${retryResult.eventId}`, { token });
+      if (detail.status === 200 && detail.data.event?.status === 'processed') {
+        finalEvent = detail.data.event;
+        break;
+      }
+    }
+    if (finalEvent) {
+      console.log(
+        `\nRetry scenario resolved: eventId=${finalEvent._id}, status=${finalEvent.status}, attempts=${finalEvent.attempts}`
+      );
+      console.log('Retry processingLogs:', finalEvent.processingLogs);
+    }
+  }
 
   console.log('\nSimulation Results:');
   console.table(results);
