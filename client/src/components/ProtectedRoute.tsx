@@ -8,8 +8,8 @@ export function ProtectedRoute() {
 
   if (isInitializing) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-950 p-6">
-        <div className="w-full max-w-sm">
+      <div className="flex min-h-screen items-center justify-center bg-slate-50 p-6 dark:bg-slate-950">
+        <div className="w-full max-w-md">
           <LoadingState label="Restoring secure session..." />
         </div>
       </div>
@@ -32,11 +32,13 @@ export function RoleRoute({ allowedRoles }: { allowedRoles: UserRole[] }) {
 
   if (!allowedRoles.includes(user.role)) {
     return (
-      <div className="rounded-xl border border-rose-500/30 bg-rose-950/20 p-6 text-center">
-        <h2 className="text-base font-semibold text-rose-200">Access Restricted</h2>
-        <p className="mt-1 text-sm text-slate-400">
-          Your role (<span className="font-medium text-slate-200">{user.role}</span>) does not
-          have permission to view this page.
+      <div className="rounded-xl border border-rose-500/30 bg-rose-50 p-6 text-center dark:bg-rose-950/20">
+        <h2 className="text-base font-semibold text-rose-800 dark:text-rose-200">
+          Access Restricted
+        </h2>
+        <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
+          Your role (<span className="font-medium text-slate-900 dark:text-slate-200">{user.role}</span>)
+          does not have permission to view this page.
         </p>
       </div>
     );
@@ -44,4 +46,3 @@ export function RoleRoute({ allowedRoles }: { allowedRoles: UserRole[] }) {
 
   return <Outlet />;
 }
-

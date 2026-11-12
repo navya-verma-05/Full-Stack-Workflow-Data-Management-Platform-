@@ -132,6 +132,30 @@ describe('Phase 4 Dashboard API, Aggregations, Filters, Pagination & Secret Reda
     expect(summaryFiltered.body.total).toBe(1);
     expect(summaryFiltered.body.counts.processed).toBe(1);
 
+    // Date-bounded period comparison (2026-11-11 vs equal-length prior day 2026-11-10)
+    const periodComparison = await request(app)
+      .get('/api/metrics/summary?from=2026-11-11&to=2026-11-11')
+      .set('Authorization', `Bearer ${viewer.accessToken}`);
+    expect(periodComparison.status).toBe(200);
+    expect(periodComparison.body.total).toBe(3);
+    expect(periodComparison.body.previousPeriod.total).toBe(1);
+    expect(periodComparison.body.previousPeriod.counts.processed).toBe(1);
+    expect(periodComparison.body.deltas.totalPct).toBe(200);
+    expect(periodComparison.body.deltas.successRatePts).toBe(-100);
+    expect(periodComparison.body.deltas.comparisonLabel).toBe('vs previous period');
+    expect(periodComparison.body.lastEventReceivedAt).toBe('2026-11-11T14:30:00.000Z');
+
+    // Comma-separated status filter for failed + dead_letter
+    const attentionEvents = await request(app)
+      .get('/api/events?status=failed,dead_letter')
+      .set('Authorization', `Bearer ${viewer.accessToken}`);
+    expect(attentionEvents.status).toBe(200);
+    expect(attentionEvents.body.items).toHaveLength(2);
+    expect(attentionEvents.body.items.map((e) => e.status).sort()).toEqual([
+      'dead_letter',
+      'failed',
+    ]);
+
     const tsDay = await request(app)
       .get('/api/metrics/timeseries?granularity=day')
       .set('Authorization', `Bearer ${viewer.accessToken}`);

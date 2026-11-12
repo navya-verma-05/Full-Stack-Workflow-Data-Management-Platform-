@@ -40,7 +40,7 @@ export const api = {
   getEvents: (params: {
     page?: number;
     limit?: number;
-    status?: EventStatus | '';
+    status?: EventStatus | string;
     sourceId?: string;
     from?: string;
     to?: string;

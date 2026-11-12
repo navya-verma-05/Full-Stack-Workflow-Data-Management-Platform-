@@ -11,55 +11,70 @@ import { SystemLock } from '../src/models/SystemLock.js';
 import { RefreshToken } from '../src/models/RefreshToken.js';
 import { encryptSecret, generateSecret, sha256Hex } from '../src/utils/crypto.js';
 
-const COMPANIES = [
-  'Northstar Logistics',
-  'Apex Global',
-  'Horizon Cloud',
-  'Vanguard Systems',
-  'Meridian Health',
-  'Cobalt Robotics',
-  'Solstice Energy',
-  'Atlas FinTech',
-  'Lumen Bio',
-  'Crestline Retail',
+function createRng(seedValue = 20261112) {
+  let a = seedValue >>> 0;
+  return function next() {
+    a |= 0;
+    a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+const ACCOUNTS = [
+  { company: 'Northstar Logistics', domain: 'northstarlogistics.io', baseAmount: 18500 },
+  { company: 'Apex Global Freight', domain: 'apexfreight.com', baseAmount: 32400 },
+  { company: 'Horizon Cloud Systems', domain: 'horizoncloud.dev', baseAmount: 24750 },
+  { company: 'Vanguard BioLabs', domain: 'vanguardbio.org', baseAmount: 48200 },
+  { company: 'Meridian Health Network', domain: 'meridianhealth.net', baseAmount: 64900 },
+  { company: 'Cobalt Robotics', domain: 'cobaltrobotics.ai', baseAmount: 41600 },
+  { company: 'Solstice Clean Energy', domain: 'solsticeenergy.co', baseAmount: 29300 },
+  { company: 'Atlas Treasury Tech', domain: 'atlastreasury.com', baseAmount: 53800 },
+  { company: 'Lumen Retail Group', domain: 'lumenretail.com', baseAmount: 14950 },
+  { company: 'Crestline Manufacturing', domain: 'crestlinemfg.com', baseAmount: 37400 },
+  { company: 'Silverline Aviation', domain: 'silverlineaero.com', baseAmount: 78500 },
+  { company: 'Redwood Security', domain: 'redwoodsec.io', baseAmount: 44100 },
+  { company: 'Boreal Analytics', domain: 'borealdata.ai', baseAmount: 19800 },
+  { company: 'Harborview Insurance', domain: 'harborviewins.com', baseAmount: 58600 },
+  { company: 'Pacific Grid Corp', domain: 'pacificgrid.com', baseAmount: 71200 },
+  { company: 'Keystone Construction', domain: 'keystonebuild.com', baseAmount: 26450 },
+  { company: 'Monarch Pharmaceuticals', domain: 'monarchpharma.org', baseAmount: 89400 },
+  { company: 'Cascadia Timber & Supply', domain: 'cascadiasupply.com', baseAmount: 16300 },
 ];
 
-const FIRST_NAMES = [
-  'Elena',
-  'Marcus',
-  'Priya',
-  'Sofia',
-  'Liam',
-  'Noah',
-  'Maya',
-  'Owen',
-  'Aria',
-  'Julian',
-  'Nadia',
-  'Ethan',
+const PEOPLE = [
+  { first: 'Elena', last: 'Rostova', title: 'VP Operations' },
+  { first: 'Marcus', last: 'Chen', title: 'Head of Platform' },
+  { first: 'Priya', last: 'Subramanian', title: 'Director of IT' },
+  { first: 'Sofia', last: 'Mendoza', title: 'RevOps Lead' },
+  { first: 'Liam', last: 'OConnor', title: 'Enterprise Architect' },
+  { first: 'Noah', last: 'Lindqvist', title: 'Procurement Director' },
+  { first: 'Maya', last: 'Desai', title: 'Staff Data Engineer' },
+  { first: 'Owen', last: 'Kowalski', title: 'VP Finance' },
+  { first: 'Aria', last: 'Takahashi', title: 'Security Compliance Lead' },
+  { first: 'Julian', last: 'Mercer', title: 'Solutions Director' },
+  { first: 'Nadia', last: 'Al-Mansoor', title: 'Supply Chain Manager' },
+  { first: 'Ethan', last: 'Bauer', title: 'Principal Systems Lead' },
+  { first: 'Hannah', last: 'Vermeer', title: 'Director of Partnerships' },
+  { first: 'Devon', last: 'Callahan', title: 'Technical Program Manager' },
+  { first: 'Keiko', last: 'Watanabe', title: 'Head of Integrations' },
+  { first: 'Mateo', last: 'Silva', title: 'Cloud Infrastructure Lead' },
+  { first: 'Clara', last: 'Novak', title: 'Chief Information Officer' },
+  { first: 'Tariq', last: 'Hassan', title: 'Commercial Ops Manager' },
 ];
 
-const LAST_NAMES = [
-  'Vance',
-  'Chen',
-  'Nair',
-  'Patel',
-  'OConnor',
-  'Kim',
-  'Silva',
-  'Brooks',
-  'Alvarez',
-  'Sato',
-  'Wright',
-  'Meyer',
+const WEB_TOPICS = ['enterprise_demo', 'security_review', 'custom_pricing', 'architecture_briefing'];
+const CRM_STAGES = ['qualification', 'security_review', 'negotiation', 'closed_won', 'expansion'];
+const PARTNER_SKUS = [
+  { sku: 'ENT-CORE-500', unitPrice: 1290 },
+  { sku: 'DATA-SYNC-PRO', unitPrice: 840 },
+  { sku: 'AUDIT-SHIELD-ADDON', unitPrice: 620 },
+  { sku: 'DEDICATED-INGEST', unitPrice: 1750 },
 ];
 
 function randomPassword() {
   return `Wp!${crypto.randomBytes(10).toString('base64url')}9`;
-}
-
-function pick(arr, idx) {
-  return arr[idx % arr.length];
 }
 
 async function seed() {
@@ -175,197 +190,297 @@ async function seed() {
     sources.push(src);
   }
 
-  const TOTAL_EVENTS = 240;
+  const rng = createRng(20261112);
   const now = Date.now();
+  const HOUR_MS = 3_600_000;
+  const DAY_MS = 24 * HOUR_MS;
   const statusCounts = { processed: 0, invalid: 0, failed: 0, dead_letter: 0, valid: 0 };
 
   const eventsToInsert = [];
   const recordsToInsert = [];
+  let seq = 0;
 
-  for (let i = 0; i < TOTAL_EVENTS; i += 1) {
-    const src = sources[i % sources.length];
-    const daysAgo = i % 14;
-    const hourOffset = (i * 7) % 24;
-    const receivedAt = new Date(
-      now - daysAgo * 24 * 60 * 60 * 1000 - hourOffset * 60 * 60 * 1000 + (i % 55) * 60 * 1000
-    );
+  // Build a 14-day timeline (daysAgo 13 down to 0) with an explicit 2-day outage on Partner Orders (days 5 and 4 ago).
+  for (let daysAgo = 13; daysAgo >= 0; daysAgo -= 1) {
+    const isIncidentDay = daysAgo === 5 || daysAgo === 4;
+    const isRecoveryDay = daysAgo === 3;
+    const dailyTotal = isIncidentDay ? 24 : daysAgo === 0 ? 16 : 16 + Math.floor(rng() * 5);
 
-    const first = pick(FIRST_NAMES, i);
-    const last = pick(LAST_NAMES, i * 3 + 1);
-    const fullName = `${first} ${last}`;
-    const company = pick(COMPANIES, i * 3);
-    const email = `${first.toLowerCase()}.${last.toLowerCase()}.${i}@${company
-      .toLowerCase()
-      .replace(/[^a-z]/g, '')}.test`;
+    for (let j = 0; j < dailyTotal; j += 1) {
+      const i = seq++;
+      const srcIdx = isIncidentDay && j % 2 === 0 ? 2 : i % sources.length;
+      const src = sources[srcIdx];
 
-    // Deterministic realistic status distribution
-    const mod = i % 20;
-    let status = 'processed';
-    if (mod === 3 || mod === 11) status = 'invalid';
-    else if (mod === 7) status = 'failed';
-    else if (mod === 15) status = 'dead_letter';
-    else if (mod === 19) status = 'valid';
+      const minuteOffset = daysAgo === 0
+        ? Math.floor(15 + rng() * 600) // today's events within last ~10h
+        : Math.floor(rng() * 23 * 60 + 20);
+      const receivedAt =
+        daysAgo === 0
+          ? new Date(now - minuteOffset * 60_000)
+          : new Date(now - daysAgo * DAY_MS - (minuteOffset % (20 * 60)) * 60_000);
 
-    statusCounts[status] += 1;
+      const person = PEOPLE[Math.floor(rng() * PEOPLE.length)];
+      const account = ACCOUNTS[Math.floor(rng() * ACCOUNTS.length)];
+      const fullName = `${person.first} ${person.last}`;
+      const email = `${person.first.toLowerCase()}.${person.last.toLowerCase()}@${account.domain}`;
 
-    const eventId = new Source.base.Types.ObjectId();
-    const recordId = status === 'processed' ? new Source.base.Types.ObjectId() : null;
+      let status = 'processed';
+      const roll = rng();
 
-    let payload;
-    let normalized;
-    if (src.schemaType === 'web_form') {
-      payload = {
-        submissionId: `wf-seed-${1000 + i}`,
-        fullName,
-        email: status === 'invalid' ? 'invalid-email' : email,
-        company,
-        topic: i % 2 === 0 ? 'enterprise_demo' : 'security_review',
-        tags: ['inbound', i % 3 === 0 ? 'priority' : 'standard'],
-      };
-      normalized = {
-        _id: recordId,
-        sourceId: src._id,
-        eventId,
-        externalId: payload.submissionId,
-        clientName: fullName,
-        clientEmail: email,
-        company,
-        category: payload.topic,
-        amount: 0,
-        currency: 'USD',
-        metadata: { tags: payload.tags },
-        normalizedAt: new Date(receivedAt.getTime() + 180),
-      };
-    } else if (src.schemaType === 'crm') {
-      const dealValue = 4500 + ((i * 1350) % 45000);
-      payload = {
-        contactId: `crm-seed-${2000 + i}`,
-        name: fullName,
-        email: status === 'invalid' ? 'bad@' : email,
-        accountName: company,
-        stage: i % 3 === 0 ? 'closed_won' : 'negotiation',
-        dealValue,
-        currency: 'USD',
-      };
-      normalized = {
-        _id: recordId,
-        sourceId: src._id,
-        eventId,
-        externalId: payload.contactId,
-        clientName: fullName,
-        clientEmail: email,
-        company,
-        category: payload.stage,
-        amount: dealValue,
-        currency: 'USD',
-        metadata: { stage: payload.stage },
-        normalizedAt: new Date(receivedAt.getTime() + 220),
-      };
-    } else {
-      const qty = (i % 4) + 1;
-      const unitPrice = 450 + ((i * 50) % 1200);
-      payload = {
-        partnerRef: `prt-seed-${3000 + i}`,
-        customer: { name: fullName, email, organization: company },
-        items: status === 'invalid' ? [] : [{ sku: `SUITE-${(i % 5) + 1}`, quantity: qty, unitPrice }],
-        currency: 'USD',
-      };
-      normalized = {
-        _id: recordId,
-        sourceId: src._id,
-        eventId,
-        externalId: payload.partnerRef,
-        clientName: fullName,
-        clientEmail: email,
-        company,
-        category: 'partner_order',
-        amount: qty * unitPrice,
-        currency: 'USD',
-        metadata: { itemCount: 1 },
-        normalizedAt: new Date(receivedAt.getTime() + 260),
-      };
-    }
+      if (src.schemaType === 'partner' && isIncidentDay) {
+        // Outage incident: 55% dead_letter, 25% failed, 10% invalid, 10% recovered
+        if (roll < 0.55) status = 'dead_letter';
+        else if (roll < 0.80) status = 'failed';
+        else if (roll < 0.90) status = 'invalid';
+        else status = 'processed';
+      } else if (src.schemaType === 'partner' && isRecoveryDay) {
+        // Partial tail recovery after hotfix
+        if (roll < 0.14) status = 'failed';
+        else if (roll < 0.22) status = 'invalid';
+        else status = 'processed';
+      } else if (daysAgo <= 1 && j < 2) {
+        // Keep fresh actionable events in the last 36h for the Overview Needs Attention panel
+        status = j === 0 ? 'failed' : 'dead_letter';
+      } else {
+        if (roll < 0.08) status = 'invalid';
+        else if (roll < 0.11) status = 'failed';
+        else if (roll < 0.13) status = 'dead_letter';
+        else if (roll < 0.15) status = 'valid';
+        else status = 'processed';
+      }
 
-    const logs = [
-      {
-        timestamp: receivedAt,
-        stage: 'ingest',
-        level: 'info',
-        message: 'Webhook HMAC signature verified and event accepted',
-      },
-    ];
-    const errors = [];
+      statusCounts[status] += 1;
 
-    if (status === 'invalid') {
-      errors.push({
-        field: src.schemaType === 'partner' ? 'items' : 'email',
-        message:
+      const eventId = new Source.base.Types.ObjectId();
+      const recordId = status === 'processed' ? new Source.base.Types.ObjectId() : null;
+
+      let payload;
+      let normalized;
+      if (src.schemaType === 'web_form') {
+        const topic = WEB_TOPICS[Math.floor(rng() * WEB_TOPICS.length)];
+        const estBudget = Math.round((account.baseAmount * (0.25 + rng() * 0.4)) / 25) * 25;
+        payload = {
+          submissionId: `wf-${2026}-${1040 + i}`,
+          fullName,
+          email: status === 'invalid' ? 'bad-email-format' : email,
+          company: account.company,
+          jobTitle: person.title,
+          topic,
+          tags: ['inbound', estBudget > 15000 ? 'enterprise' : 'mid-market'],
+        };
+        normalized = {
+          _id: recordId,
+          sourceId: src._id,
+          eventId,
+          externalId: payload.submissionId,
+          clientName: fullName,
+          clientEmail: email,
+          company: account.company,
+          category: topic,
+          amount: 0,
+          currency: 'USD',
+          metadata: { title: person.title, tags: payload.tags },
+          normalizedAt: new Date(receivedAt.getTime() + 140 + Math.floor(rng() * 180)),
+        };
+      } else if (src.schemaType === 'crm') {
+        const stage = CRM_STAGES[Math.floor(rng() * CRM_STAGES.length)];
+        const dealValue = Math.round((account.baseAmount * (0.6 + rng() * 1.45)) / 50) * 50;
+        payload = {
+          contactId: `crm-opp-${4200 + i}`,
+          name: fullName,
+          email: status === 'invalid' ? 'missing-domain@' : email,
+          accountName: account.company,
+          stage,
+          dealValue,
+          currency: 'USD',
+          ownerRole: person.title,
+        };
+        normalized = {
+          _id: recordId,
+          sourceId: src._id,
+          eventId,
+          externalId: payload.contactId,
+          clientName: fullName,
+          clientEmail: email,
+          company: account.company,
+          category: stage,
+          amount: dealValue,
+          currency: 'USD',
+          metadata: { stage, ownerRole: person.title },
+          normalizedAt: new Date(receivedAt.getTime() + 190 + Math.floor(rng() * 240)),
+        };
+      } else {
+        const skuSpec = PARTNER_SKUS[Math.floor(rng() * PARTNER_SKUS.length)];
+        const qty = 2 + Math.floor(rng() * 12);
+        const orderAmount = qty * skuSpec.unitPrice;
+        payload = {
+          partnerRef: `po-${8800 + i}`,
+          customer: {
+            name: fullName,
+            email,
+            organization: account.company,
+          },
+          items:
+            status === 'invalid'
+              ? []
+              : [
+                  {
+                    sku: skuSpec.sku,
+                    quantity: qty,
+                    unitPrice: skuSpec.unitPrice,
+                  },
+                ],
+          currency: 'USD',
+          region: i % 3 === 0 ? 'eu-west' : 'us-east',
+        };
+        normalized = {
+          _id: recordId,
+          sourceId: src._id,
+          eventId,
+          externalId: payload.partnerRef,
+          clientName: fullName,
+          clientEmail: email,
+          company: account.company,
+          category: 'partner_order',
+          amount: orderAmount,
+          currency: 'USD',
+          metadata: { sku: skuSpec.sku, quantity: qty, region: payload.region },
+          normalizedAt: new Date(receivedAt.getTime() + 210 + Math.floor(rng() * 320)),
+        };
+      }
+
+      const logs = [
+        {
+          timestamp: receivedAt,
+          stage: 'ingest',
+          level: 'info',
+          message: 'HMAC-SHA256 signature verified within timestamp tolerance',
+        },
+      ];
+      const errors = [];
+
+      if (status === 'invalid') {
+        const field = src.schemaType === 'partner' ? 'items' : 'email';
+        const message =
           src.schemaType === 'partner'
-            ? 'Too small: expected array to have >=1 items'
-            : 'Invalid email address',
-        code: 'VALIDATION_ERROR',
-      });
-      logs.push({
-        timestamp: new Date(receivedAt.getTime() + 15),
-        stage: 'validate',
-        level: 'warn',
-        message: `Payload failed ${src.schemaType} schema validation`,
-      });
-    } else {
-      logs.push({
-        timestamp: new Date(receivedAt.getTime() + 15),
-        stage: 'validate',
-        level: 'info',
-        message: `Payload validated against ${src.schemaType} schema`,
+            ? 'Partner order must include at least 1 line item'
+            : 'Invalid email address format';
+        errors.push({ field, message, code: 'VALIDATION_ERROR' });
+        logs.push({
+          timestamp: new Date(receivedAt.getTime() + 22),
+          stage: 'validate',
+          level: 'warn',
+          message: `Payload failed ${src.schemaType} schema validation: ${message}`,
+        });
+      } else {
+        logs.push({
+          timestamp: new Date(receivedAt.getTime() + 18),
+          stage: 'validate',
+          level: 'info',
+          message: `Payload validated against ${src.schemaType} schema`,
+        });
+      }
+
+      let attempts = 0;
+      let processedAt = null;
+      let nextRetryAt = null;
+      let deadLetteredAt = null;
+
+      if (status === 'processed') {
+        const retriedOnce = isRecoveryDay && src.schemaType === 'partner';
+        attempts = retriedOnce ? 2 : 1;
+        if (retriedOnce) {
+          logs.push({
+            timestamp: new Date(receivedAt.getTime() + 140),
+            stage: 'retry',
+            level: 'warn',
+            message: 'Attempt 1/4 failed (Partner API 503); retry scheduled in 1000ms',
+          });
+        }
+        const latencyMs = retriedOnce ? 1320 : 120 + Math.floor(rng() * 280);
+        processedAt = new Date(receivedAt.getTime() + latencyMs);
+        logs.push({
+          timestamp: processedAt,
+          stage: 'process',
+          level: 'info',
+          message: `Processed successfully on attempt ${attempts} into Record ${recordId}`,
+        });
+        recordsToInsert.push(normalized);
+      } else if (status === 'failed') {
+        attempts = 2;
+        const errMsg =
+          src.schemaType === 'partner'
+            ? 'Partner fulfillment gateway 503 Service Unavailable'
+            : 'Downstream CRM write lock timeout (ETIMEDOUT)';
+        errors.push({ field: 'downstream', message: errMsg, code: 'DOWNSTREAM_TRANSIENT' });
+        logs.push({
+          timestamp: new Date(receivedAt.getTime() + 95),
+          stage: 'retry',
+          level: 'warn',
+          message: `Attempt 1/4 failed (${errMsg}); retry scheduled in 1000ms`,
+        });
+        logs.push({
+          timestamp: new Date(receivedAt.getTime() + 1140),
+          stage: 'retry',
+          level: 'warn',
+          message: `Attempt 2/4 failed (${errMsg}); retry scheduled in 2000ms`,
+        });
+        nextRetryAt = new Date(now + 45 * 60_000);
+      } else if (status === 'dead_letter') {
+        attempts = 4;
+        const errMsg =
+          src.schemaType === 'partner'
+            ? 'Partner ERP rate limit / upstream 503 outage persisted across 4 attempts'
+            : 'Customer record sync rejected permanently (HTTP 502 Bad Gateway)';
+        errors.push({ field: 'downstream', message: errMsg, code: 'MAX_ATTEMPTS_EXCEEDED' });
+        logs.push(
+          {
+            timestamp: new Date(receivedAt.getTime() + 90),
+            stage: 'retry',
+            level: 'warn',
+            message: `Attempt 1/4 failed (${errMsg}); retry scheduled in 1000ms`,
+          },
+          {
+            timestamp: new Date(receivedAt.getTime() + 1120),
+            stage: 'retry',
+            level: 'warn',
+            message: `Attempt 2/4 failed (${errMsg}); retry scheduled in 2000ms`,
+          },
+          {
+            timestamp: new Date(receivedAt.getTime() + 3180),
+            stage: 'retry',
+            level: 'warn',
+            message: `Attempt 3/4 failed (${errMsg}); retry scheduled in 4000ms`,
+          }
+        );
+        deadLetteredAt = new Date(receivedAt.getTime() + 7250);
+        logs.push({
+          timestamp: deadLetteredAt,
+          stage: 'dead_letter',
+          level: 'error',
+          message: `Exhausted 4 attempts: ${errMsg}`,
+        });
+      } else if (status === 'valid') {
+        nextRetryAt = new Date(now + 30 * 60_000);
+      }
+
+      eventsToInsert.push({
+        _id: eventId,
+        sourceId: src._id,
+        payload,
+        status,
+        errors,
+        processingLogs: logs,
+        idempotencyKey: `evt-${src.schemaType}-${String(1000 + i)}-${account.domain.split('.')[0]}`,
+        attempts,
+        maxAttempts: 4,
+        nextRetryAt,
+        deadLetteredAt,
+        receivedAt,
+        processedAt,
+        recordId,
       });
     }
-
-    if (status === 'processed') {
-      logs.push({
-        timestamp: new Date(receivedAt.getTime() + 180 + (i % 150)),
-        stage: 'process',
-        level: 'info',
-        message: `Processed successfully into Record ${recordId}`,
-      });
-      recordsToInsert.push(normalized);
-    } else if (status === 'failed') {
-      logs.push({
-        timestamp: new Date(receivedAt.getTime() + 120),
-        stage: 'retry',
-        level: 'warn',
-        message: 'Attempt 1/4 failed (Downstream timeout); retry scheduled',
-      });
-    } else if (status === 'dead_letter') {
-      logs.push({
-        timestamp: new Date(receivedAt.getTime() + 120),
-        stage: 'retry',
-        level: 'warn',
-        message: 'Attempt 1/4 failed (Downstream 503); retry scheduled',
-      });
-      logs.push({
-        timestamp: new Date(receivedAt.getTime() + 3500),
-        stage: 'dead_letter',
-        level: 'error',
-        message: 'Exhausted 4 attempts: Downstream 503 persistent error',
-      });
-    }
-
-    eventsToInsert.push({
-      _id: eventId,
-      sourceId: src._id,
-      payload,
-      status,
-      errors,
-      processingLogs: logs,
-      idempotencyKey: `seed-${src.schemaType}-${i}`,
-      attempts: status === 'processed' ? 1 : status === 'failed' ? 1 : status === 'dead_letter' ? 4 : 0,
-      maxAttempts: 4,
-      nextRetryAt: status === 'failed' ? new Date(now + 60 * 60 * 1000) : status === 'valid' ? new Date(now + 60 * 60 * 1000) : null,
-      deadLetteredAt: status === 'dead_letter' ? new Date(receivedAt.getTime() + 3500) : null,
-      receivedAt,
-      processedAt: status === 'processed' ? new Date(receivedAt.getTime() + 180 + (i % 150)) : null,
-      recordId,
-    });
   }
 
   await Event.insertMany(eventsToInsert);
@@ -380,7 +495,7 @@ async function seed() {
       resourceType: 'user',
       resourceId: String(createdUsers.admin._id),
       metadata: { role: 'admin' },
-      createdAt: new Date(now - 14 * 24 * 60 * 60 * 1000),
+      createdAt: new Date(now - 14 * DAY_MS),
     },
     ...sources.map((s, idx) => ({
       actorId: createdUsers.admin._id,
@@ -390,8 +505,18 @@ async function seed() {
       resourceType: 'source',
       resourceId: String(s._id),
       metadata: { name: s.name, schemaType: s.schemaType },
-      createdAt: new Date(now - (13 - idx) * 24 * 60 * 60 * 1000),
+      createdAt: new Date(now - (13 - idx) * DAY_MS),
     })),
+    {
+      actorId: createdUsers.admin._id,
+      actorEmail: createdUsers.admin.email,
+      actorRole: 'admin',
+      action: 'source.rotate_secret',
+      resourceType: 'source',
+      resourceId: String(sources[2]._id),
+      metadata: { reason: 'post_incident_partner_gateway_key_rotation' },
+      createdAt: new Date(now - 3 * DAY_MS),
+    },
     {
       actorId: createdUsers.manager._id,
       actorEmail: createdUsers.manager.email,
@@ -400,7 +525,7 @@ async function seed() {
       resourceType: 'event',
       resourceId: String(eventsToInsert[0]._id),
       metadata: { previousStatus: 'dead_letter' },
-      createdAt: new Date(now - 2 * 60 * 60 * 1000),
+      createdAt: new Date(now - 2 * HOUR_MS),
     },
   ]);
 
@@ -408,7 +533,7 @@ async function seed() {
   console.log('Seeded Users (save these credentials; generated passwords are shown once):');
   console.table(credentialsToPrint);
   console.log('Seeded Sources:', sources.map((s) => `${s.name} (${s.schemaType})`).join(', '));
-  console.log('Seeded Events:', TOTAL_EVENTS, statusCounts);
+  console.log('Seeded Events:', eventsToInsert.length, statusCounts);
   console.log('Seeded Records:', recordsToInsert.length);
 
   await disconnectDB();

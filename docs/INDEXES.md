@@ -26,17 +26,18 @@
 
 ## Observed `explain('executionStats')` Plans
 
-Executed against MongoDB 7 on the seeded `workflow_platform` dataset (240 events, 180 records, 5 audit logs):
+Executed against MongoDB on the seeded `workflow_platform` dataset (259 events, 191 records, 6 audit logs):
 
 | Query Pattern | Winning Plan | Index Used | Returned | Keys Examined | Docs Examined |
 | --- | --- | --- | --- | --- | --- |
-| `Event.find({ sourceId, idempotencyKey })` | `PROJECTION_SIMPLE` -> `IXSCAN` | `sourceId_1_idempotencyKey_1` | 1 | 1 | 1 |
-| `Event.find({ status: 'processed' }).sort({ receivedAt: -1 }).limit(20)` | `LIMIT` -> `IXSCAN` | `status_1_receivedAt_-1` | 20 | 20 | 20 |
-| `Event.find({ sourceId }).sort({ receivedAt: -1 }).limit(20)` | `LIMIT` -> `IXSCAN` | `sourceId_1_receivedAt_-1` | 20 | 20 | 20 |
-| `Event.find({ status: { $in: ['valid', 'failed'] }, nextRetryAt: { $lte: cutoff, $ne: null } }).sort({ nextRetryAt: 1 }).limit(1)` | `LIMIT` -> `IXSCAN` | `status_1_nextRetryAt_1_processingLockUntil_1` | 1 | 2 | 1 |
-| `RecordModel.find({ sourceId }).sort({ createdAt: -1 }).limit(20)` | `LIMIT` -> `IXSCAN` | `sourceId_1_createdAt_-1` | 20 | 20 | 20 |
-| `RecordModel.find({ $text: { $search: 'Northstar' } })` | `TEXT_MATCH` | `clientName_text_clientEmail_text_company_text_externalId_text` | 24 | 24 | 24 |
-| `AuditLog.find().sort({ createdAt: -1 }).limit(20)` | `LIMIT` -> `IXSCAN` | `createdAt_-1` | 5 | 5 | 5 |
+| `Event.find({ sourceId, idempotencyKey })` | `PROJECTION_SIMPLE -> FETCH -> IXSCAN` | `sourceId_1_idempotencyKey_1` | 1 | 1 | 1 |
+| `Event.find({ status: 'processed' }).sort({ receivedAt: -1 }).limit(20)` | `LIMIT -> PROJECTION_SIMPLE -> FETCH -> IXSCAN` | `status_1_receivedAt_-1` | 20 | 20 | 20 |
+| `Event.find({ status: { $in: ['failed', 'dead_letter'] } }).sort({ receivedAt: -1 }).limit(10)` | `LIMIT -> PROJECTION_SIMPLE -> FETCH -> SORT_MERGE -> IXSCAN` | `status_1_receivedAt_-1` | 10 | 11 | 10 |
+| `Event.find({ sourceId }).sort({ receivedAt: -1 }).limit(20)` | `LIMIT -> PROJECTION_SIMPLE -> FETCH -> IXSCAN` | `sourceId_1_receivedAt_-1` | 20 | 20 | 20 |
+| `Event.find({ status: { $in: ['valid', 'failed'] }, nextRetryAt: { $lte: cutoff, $ne: null } }).sort({ nextRetryAt: 1 }).limit(1)` | `LIMIT -> PROJECTION_SIMPLE -> FETCH -> SORT_MERGE -> IXSCAN` | `status_1_nextRetryAt_1_processingLockUntil_1` | 1 | 2 | 1 |
+| `RecordModel.find({ sourceId }).sort({ createdAt: -1 }).limit(20)` | `LIMIT -> FETCH -> IXSCAN` | `sourceId_1_createdAt_-1` | 20 | 20 | 20 |
+| `RecordModel.find({ $text: { $search: 'Northstar' } })` | `TEXT_MATCH -> FETCH -> IXSCAN` | `clientName_text_clientEmail_text_company_text_externalId_text` | 12 | 12 | 12 |
+| `AuditLog.find().sort({ createdAt: -1 }).limit(20)` | `LIMIT -> FETCH -> IXSCAN` | `createdAt_-1` | 6 | 6 | 6 |
 
 ## Aggregation Pipelines Used in Phase 4
 

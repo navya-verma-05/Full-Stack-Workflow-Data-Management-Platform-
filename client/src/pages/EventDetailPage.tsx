@@ -1,15 +1,21 @@
 import { Link, useParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, RotateCcw } from 'lucide-react';
+import { ArrowLeft, Copy, RotateCcw } from 'lucide-react';
 import { api } from '../api/endpoints';
 import { useAuth } from '../context/AuthContext';
-import { StatusBadge } from '../components/StatusBadge';
-import { ErrorState, LoadingState } from '../components/StateFeedback';
+import { useToast } from '../context/ToastContext';
 import type { NormalizedRecord, Source } from '../types/api';
+import { formatDateTime } from '../utils/date';
+import { JsonCodeBlock } from '../components/JsonCodeBlock';
+import { RelativeTime } from '../components/RelativeTime';
+import { RetryTimeline } from '../components/RetryTimeline';
+import { ErrorState, LoadingState } from '../components/StateFeedback';
+import { StatusBadge } from '../components/StatusBadge';
 
 export function EventDetailPage() {
   const { id = '' } = useParams();
   const { user } = useAuth();
+  const toast = useToast();
   const queryClient = useQueryClient();
 
   const detailQuery = useQuery({
@@ -20,10 +26,15 @@ export function EventDetailPage() {
 
   const replayMutation = useMutation({
     mutationFn: () => api.replayEvent(id),
-    onSuccess: () => {
+    onSuccess: (res) => {
+      toast.success('Event queued for replay', res.event.idempotencyKey);
       queryClient.invalidateQueries({ queryKey: ['event-detail', id] });
       queryClient.invalidateQueries({ queryKey: ['events'] });
+      queryClient.invalidateQueries({ queryKey: ['events-needs-attention'] });
       queryClient.invalidateQueries({ queryKey: ['metrics-summary'] });
+    },
+    onError: (err) => {
+      toast.error('Replay failed', (err as Error).message);
     },
   });
 
@@ -57,24 +68,47 @@ export function EventDetailPage() {
       ? (event.recordId as NormalizedRecord)
       : null;
 
+  const handleCopyKey = async () => {
+    try {
+      await navigator.clipboard.writeText(event.idempotencyKey);
+      toast.success('Copied idempotency key', event.idempotencyKey);
+    } catch {
+      toast.error('Clipboard unavailable');
+    }
+  };
+
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div className="space-y-1">
+      {/* Header & prominent Replay action */}
+      <div className="flex flex-wrap items-start justify-between gap-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900/60">
+        <div className="space-y-2">
           <Link
             to="/events"
-            className="inline-flex items-center gap-1.5 text-xs font-medium text-indigo-400 hover:text-indigo-300"
+            className="inline-flex items-center gap-1.5 text-xs font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
             Back to events
           </Link>
-          <div className="flex items-center gap-3">
-            <h1 className="text-xl font-semibold text-white">Event {event._id}</h1>
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="text-xl font-semibold text-slate-900 dark:text-white">
+              Event {event._id}
+            </h1>
             <StatusBadge status={event.status} />
           </div>
-          <p className="font-mono text-xs text-slate-400">
-            Idempotency key: {event.idempotencyKey}
-          </p>
+          <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+            <span>Idempotency key:</span>
+            <code className="rounded bg-slate-100 px-2 py-0.5 font-mono text-slate-800 dark:bg-slate-800 dark:text-slate-200">
+              {event.idempotencyKey}
+            </code>
+            <button
+              type="button"
+              onClick={handleCopyKey}
+              aria-label="Copy idempotency key"
+              className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+            >
+              <Copy className="h-3.5 w-3.5" />
+            </button>
+          </div>
         </div>
 
         {canReplay && (
@@ -82,7 +116,7 @@ export function EventDetailPage() {
             type="button"
             disabled={replayMutation.isPending}
             onClick={() => replayMutation.mutate()}
-            className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500 disabled:opacity-60"
+            className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-md shadow-indigo-600/20 transition-all hover:bg-indigo-500 disabled:opacity-60"
           >
             <RotateCcw className="h-4 w-4" />
             {replayMutation.isPending ? 'Queuing replay...' : 'Replay Event'}
@@ -90,110 +124,151 @@ export function EventDetailPage() {
         )}
       </div>
 
-      {replayMutation.isError && (
-        <ErrorState message={(replayMutation.error as Error).message} />
-      )}
-
-      {replayMutation.isSuccess && (
-        <div className="rounded-lg border border-emerald-500/40 bg-emerald-950/30 px-4 py-2.5 text-sm text-emerald-200">
-          Event re-queued for asynchronous worker processing.
-        </div>
-      )}
-
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-        <InfoTile label="Source" value={source ? `${source.name} (${source.schemaType})` : 'Unknown'} />
-        <InfoTile label="Attempts" value={`${event.attempts} / ${event.maxAttempts}`} />
-        <InfoTile label="Received At" value={new Date(event.receivedAt).toLocaleString()} />
+      {/* Metadata summary strip */}
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+        <InfoTile label="Source" value={source?.name || String(event.sourceId)} />
+        <InfoTile label="Schema Type" value={source?.schemaType || '—'} mono />
         <InfoTile
-          label="Processed At"
-          value={event.processedAt ? new Date(event.processedAt).toLocaleString() : 'Not processed'}
+          label="Received"
+          value={
+            <>
+              <RelativeTime value={event.receivedAt} /> · {formatDateTime(event.receivedAt)}
+            </>
+          }
+        />
+        <InfoTile
+          label="Processed"
+          value={
+            event.processedAt ? (
+              <>
+                <RelativeTime value={event.processedAt} /> · {formatDateTime(event.processedAt)}
+              </>
+            ) : (
+              'Pending / Not processed'
+            )
+          }
         />
       </div>
 
+      {/* Errors banner if present */}
       {event.errors.length > 0 && (
-        <section className="rounded-xl border border-amber-500/30 bg-amber-950/20 p-5">
-          <h2 className="mb-3 text-sm font-semibold text-amber-200">Validation Errors</h2>
-          <ul className="space-y-2 text-xs">
+        <div className="rounded-xl border border-rose-500/30 bg-rose-50 p-4 dark:bg-rose-950/20">
+          <h2 className="text-sm font-semibold text-rose-800 dark:text-rose-200">
+            Validation & Downstream Errors ({event.errors.length})
+          </h2>
+          <ul className="mt-2 space-y-1.5 text-xs text-rose-700 dark:text-rose-100">
             {event.errors.map((err, idx) => (
-              <li
-                key={`${err.field}-${idx}`}
-                className="rounded-lg border border-amber-500/20 bg-slate-950/60 px-3 py-2 text-amber-100"
-              >
-                <span className="font-mono font-semibold text-amber-300">{err.field}</span>:{' '}
-                {err.message} <span className="text-slate-500">({err.code})</span>
+              <li key={`${err.field}-${idx}`}>
+                <span className="font-mono font-semibold text-rose-600 dark:text-rose-300">
+                  {err.field || 'payload'}
+                </span>
+                : {err.message}{' '}
+                <span className="text-rose-500/80 dark:text-rose-300/70">({err.code})</span>
               </li>
             ))}
           </ul>
-        </section>
+        </div>
       )}
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <section className="rounded-xl border border-slate-800 bg-slate-900/60 p-5">
-          <h2 className="mb-4 text-sm font-semibold text-slate-200">Processing Timeline</h2>
-          {event.processingLogs.length === 0 ? (
-            <p className="text-xs text-slate-400">No processing logs recorded.</p>
-          ) : (
-            <ol className="space-y-3 border-l border-slate-700 pl-4">
-              {event.processingLogs.map((log, idx) => (
-                <li key={idx} className="relative text-xs">
-                  <span
-                    className={`absolute -left-[21px] top-1 h-2.5 w-2.5 rounded-full ${
-                      log.level === 'error'
-                        ? 'bg-rose-400'
-                        : log.level === 'warn'
-                          ? 'bg-amber-400'
-                          : 'bg-emerald-400'
-                    }`}
-                  />
-                  <div className="flex items-center gap-2 text-slate-400">
-                    <span className="font-mono uppercase text-indigo-300">{log.stage}</span>
-                    <span>•</span>
-                    <span>{new Date(log.timestamp).toLocaleString()}</span>
-                  </div>
-                  <p className="mt-0.5 text-slate-200">{log.message}</p>
-                </li>
-              ))}
-            </ol>
-          )}
-        </section>
+      {/* Side-by-side Raw Payload vs Normalized Record */}
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+        <JsonCodeBlock
+          title="Raw Webhook Payload"
+          subtitle="Verified JSON envelope stored on ingestion"
+          data={event.payload}
+        />
 
-        <section className="rounded-xl border border-slate-800 bg-slate-900/60 p-5">
-          <h2 className="mb-3 text-sm font-semibold text-slate-200">Raw Webhook Payload</h2>
-          <pre className="max-h-72 overflow-auto rounded-lg bg-slate-950 p-4 font-mono text-xs text-slate-200">
-            {JSON.stringify(event.payload, null, 2)}
-          </pre>
-
-          {record && (
-            <div className="mt-5 border-t border-slate-800 pt-4">
-              <h3 className="mb-2 text-sm font-semibold text-emerald-300">Normalized Record</h3>
-              <div className="grid grid-cols-2 gap-2 text-xs text-slate-300">
-                <div>
-                  <span className="text-slate-500">Client:</span> {record.clientName}
-                </div>
-                <div>
-                  <span className="text-slate-500">Email:</span> {record.clientEmail || '-'}
-                </div>
-                <div>
-                  <span className="text-slate-500">Company:</span> {record.company || '-'}
-                </div>
-                <div>
-                  <span className="text-slate-500">Amount:</span> {record.amount} {record.currency}
-                </div>
+        {record ? (
+          <div className="flex flex-col gap-4">
+            <div className="rounded-xl border border-emerald-500/30 bg-emerald-50/70 p-4 dark:bg-emerald-950/20">
+              <div className="mb-3 flex items-center justify-between">
+                <h2 className="text-xs font-semibold uppercase tracking-wider text-emerald-800 dark:text-emerald-200">
+                  Normalized Client Record
+                </h2>
+                <span className="font-mono text-[11px] text-emerald-700 dark:text-emerald-300">
+                  {record._id}
+                </span>
               </div>
+              <dl className="grid grid-cols-2 gap-3 text-xs">
+                <div>
+                  <dt className="text-emerald-700/80 dark:text-emerald-300/70">Client</dt>
+                  <dd className="mt-0.5 font-semibold text-slate-900 dark:text-white">
+                    {record.clientName}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-emerald-700/80 dark:text-emerald-300/70">Email</dt>
+                  <dd className="mt-0.5 text-slate-800 dark:text-slate-200">
+                    {record.clientEmail || '—'}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-emerald-700/80 dark:text-emerald-300/70">Company</dt>
+                  <dd className="mt-0.5 text-slate-800 dark:text-slate-200">
+                    {record.company || '—'}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-emerald-700/80 dark:text-emerald-300/70">Category & Value</dt>
+                  <dd className="mt-0.5 font-mono text-slate-800 dark:text-slate-200">
+                    {record.category || '—'}
+                    {record.amount
+                      ? ` · ${record.amount.toLocaleString()} ${record.currency || 'USD'}`
+                      : ''}
+                  </dd>
+                </div>
+              </dl>
             </div>
-          )}
-        </section>
+
+            <JsonCodeBlock
+              title="Normalized Record Document"
+              subtitle={`Normalized ${formatDateTime(record.normalizedAt)}`}
+              data={record}
+              maxHeightClass="max-h-72"
+            />
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-300 bg-white p-8 text-center dark:border-slate-800 dark:bg-slate-900/40">
+            <h2 className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+              No Normalized Record Created
+            </h2>
+            <p className="mt-1.5 max-w-sm text-xs text-slate-500 dark:text-slate-400">
+              Records are only created after schema validation passes and worker processing completes.
+            </p>
+          </div>
+        )}
       </div>
+
+      {/* Retry & Processing Timeline */}
+      <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900/60">
+        <h2 className="mb-4 text-sm font-semibold text-slate-900 dark:text-white">
+          Retry & Processing Timeline
+        </h2>
+        <RetryTimeline event={event} />
+      </section>
     </div>
   );
 }
 
-function InfoTile({ label, value }: { label: string; value: string }) {
+function InfoTile({
+  label,
+  value,
+  mono = false,
+}: {
+  label: string;
+  value: React.ReactNode;
+  mono?: boolean;
+}) {
   return (
-    <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
-      <p className="text-xs text-slate-400">{label}</p>
-      <p className="mt-1 text-sm font-medium text-white">{value}</p>
+    <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900/60">
+      <p className="text-xs text-slate-500 dark:text-slate-400">{label}</p>
+      <p
+        className={`mt-1 text-xs font-medium text-slate-900 dark:text-slate-100 ${
+          mono ? 'font-mono' : ''
+        }`}
+      >
+        {value}
+      </p>
     </div>
   );
 }
-

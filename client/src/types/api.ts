@@ -106,11 +106,34 @@ export interface PaginatedResponse<T> {
   pagination: PaginationMeta;
 }
 
+export interface MetricsDeltas {
+  totalPct: number | null;
+  processedPct: number | null;
+  invalidPct: number | null;
+  failedPct: number | null;
+  deadLetterPct: number | null;
+  attentionPct: number | null;
+  successRatePts: number;
+  avgProcessingMsPct: number | null;
+  comparisonLabel: string;
+}
+
 export interface MetricsSummary {
   total: number;
   counts: Record<EventStatus, number>;
   successRate: number;
   avgProcessingMs: number;
+  lastEventReceivedAt?: string | null;
+  previousPeriod?: {
+    total: number;
+    counts: Record<EventStatus, number>;
+    successRate: number;
+    avgProcessingMs: number;
+    from: string;
+    to: string;
+    comparisonLabel: string;
+  };
+  deltas?: MetricsDeltas;
   bySource: Array<{
     sourceId: string;
     sourceName: string;

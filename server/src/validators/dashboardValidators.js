@@ -33,10 +33,24 @@ export const metricsTimeSeriesSchema = {
     .strict(),
 };
 
+const statusFilterSchema = z
+  .string()
+  .trim()
+  .max(120)
+  .refine(
+    (val) =>
+      val
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean)
+        .every((s) => EVENT_STATUSES.includes(s)),
+    { message: `status must be one or more of: ${EVENT_STATUSES.join(', ')}` }
+  );
+
 export const listEventsSchema = {
   query: paginationQuerySchema
     .extend({
-      status: z.enum(EVENT_STATUSES).optional(),
+      status: statusFilterSchema.optional(),
       sourceId: objectIdSchema.optional(),
       from: dateStringSchema.optional(),
       to: dateStringSchema.optional(),

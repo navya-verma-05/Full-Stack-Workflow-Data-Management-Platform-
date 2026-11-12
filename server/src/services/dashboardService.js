@@ -19,7 +19,13 @@ export async function listEvents({
   search,
 }) {
   const match = {};
-  if (status) match.status = status;
+  if (status) {
+    const statuses = String(status)
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+    match.status = statuses.length > 1 ? { $in: statuses } : statuses[0];
+  }
   if (sourceId) match.sourceId = new mongoose.Types.ObjectId(sourceId);
   const dateRange = parseDateRange(from, to);
   if (dateRange) match.receivedAt = dateRange;
