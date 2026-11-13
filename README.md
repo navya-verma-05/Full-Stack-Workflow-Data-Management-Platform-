@@ -235,18 +235,17 @@ All numbers below were measured during verified test executions on the developme
 ### Test Suites & Coverage
 | Suite | Tests | Result | Statements | Branches | Functions | Lines |
 |---|---|---|---|---|---|---|
-| **Server** (`mongodb-memory-server`) | 36 passed | **100% Pass** | **91.07%** | 67.29% | 94.11% | **91.07%** |
-| **Client** (Vitest + JSDOM) | 11 passed | **100% Pass** | **61.16%** | 65.09% | 49.20% | **61.16%** |
-| **Total** | **47 passed** | **0 failures** | — | — | — | — |
+| **Server** (`mongodb-memory-server`) | 41 passed | **100% Pass** | **90.90%** | 67.20% | 94.23% | **90.90%** |
+| **Client** (Vitest + JSDOM) | 20 passed | **100% Pass** | **64.06%** | 65.91% | 52.26% | **64.06%** |
+| **Total** | **61 passed** | **0 failures** | — | — | — | — |
 
 - **Coverage Weak Areas**:
-  - `server`: `config/db.js` (0% — production DB connector; tests run against in-memory Mongo), `services/userService.js` (79.74% — user deactivation branches).
-  - `client`: Admin sub-pages (`UsersPage.tsx` 3.12%, `AuditLogsPage.tsx` 4.34%, `RecordsPage.tsx` 4.26%) not deep-linked in the primary navigation suite. Core flows (`OverviewPage.tsx` 82.25%, `EventsPage.tsx` 84.95%, `LoginPage.tsx` 98.59%, `EventDrawer.tsx` 89.74%) have high coverage.
+  - `server`: `config/db.js` (0% — production standalone DB connector; unit tests run against in-memory Mongo), `middleware/errorHandler.js` (50.53% — fallback uncaught error formatting), `services/userService.js` (79.74%).
+  - `client`: CRUD and administration tables (`UsersPage.tsx` 3.12%, `AuditLogsPage.tsx` 4.34%, `RecordsPage.tsx` 4.26%) requiring manual backend mutation. Core operational flows (`LoginPage.tsx` 98.65%, `OverviewPage.tsx` 90.94%, `EventsPage.tsx` 84.83%, `EventDrawer.tsx` 89.94%, `ToastContext.tsx` 92.30%, `ThemeContext.tsx` 84.78%, `RelativeTime.tsx` 90.00%) have strong test coverage.
 
 ### Performance Benchmarks
 Detailed benchmarks are recorded in [docs/PERFORMANCE.md](./docs/PERFORMANCE.md):
-- **Health Endpoint (`GET /api/health`)**: **5,732.9 req/sec** (p50: 3.07ms, p95: 6.16ms, p99: 10.77ms).
-- **Full Ingestion Pipeline (`POST /api/webhooks/:id`)**: **66.5 req/sec** sequential throughput with full HMAC verification, Zod validation, and MongoDB write (p50: 15.42ms, p95: 16.88ms, p99: 19.51ms).
+- **Isolated Pipeline Benchmark (`npm --prefix server run perf`)**: **110.5 req/sec** (p50: 35.14ms, p95: 79.34ms, p99: 86.22ms) measured over loopback via an isolated dedicated server instance bound to guarded `workflow_platform_perf`, executing complete HMAC-SHA256 signature verification, Zod schema validation, and atomic MongoDB insertion.
 - **Rate Limit Safeguards**: Webhooks enforce a ceiling of 1,000 requests/minute per IP, rejecting floods with HTTP 429 `WEBHOOK_RATE_LIMITED`.
 
 ### Quality & Security Audits

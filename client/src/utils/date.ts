@@ -65,10 +65,12 @@ export function formatRelativeTime(
 
   const diffSec = Math.round((Date.now() - ts) / 1000);
   if (diffSec < 0) {
-    const aheadMin = Math.ceil(Math.abs(diffSec) / 60);
-    return aheadMin < 60
-      ? `in ${aheadMin}m`
-      : `in ${Math.ceil(aheadMin / 60)}h`;
+    const aheadMin = Math.round(Math.abs(diffSec) / 60);
+    if (aheadMin < 60) {
+      return `in ${aheadMin}m`;
+    }
+    const aheadHours = Math.round(aheadMin / 60);
+    return `in ~${aheadHours}h`;
   }
   if (diffSec < 45) return "just now";
   if (diffSec < 3600) return `${Math.floor(diffSec / 60)}m ago`;

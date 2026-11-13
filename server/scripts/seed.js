@@ -529,7 +529,7 @@ async function seed() {
           level: "warn",
           message: `Attempt 2/4 failed (${errMsg}); retry scheduled in 2000ms`,
         });
-        nextRetryAt = new Date(now + 365 * DAY_MS); // far in future so worker does not exhaust during demo
+        nextRetryAt = new Date(now + 6 * HOUR_MS); // ~6 hours ahead so worker leaves them alone and UI displays sensible retry in ~6h
       } else if (status === "dead_letter") {
         attempts = 4;
         const errMsg =
@@ -569,7 +569,7 @@ async function seed() {
           message: `Exhausted 4 attempts: ${errMsg}`,
         });
       } else if (status === "valid") {
-        nextRetryAt = new Date(now + 365 * DAY_MS);
+        nextRetryAt = new Date(now + 6 * HOUR_MS);
       }
 
       eventsToInsert.push({
