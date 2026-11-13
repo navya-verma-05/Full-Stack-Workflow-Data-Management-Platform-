@@ -14,23 +14,82 @@ External systems (inbound web forms, CRM deal synchronizations, and B2B partner 
 
 ## Visual Tour & Screenshots
 
-<!-- Placeholder media assets stored in docs/screenshots/ -->
+### 1. Operations Overview & Live Telemetry
 <div align="center">
   <img src="./docs/screenshots/overview.png" alt="Operational Overview Dashboard" width="850" />
-  <p><em>Operational Overview: Real-time KPI summary, rolling period deltas, stacked ingestion chart, and Needs Attention triage panel.</em></p>
+  <p><em>Operational Overview (Admin): Real-time KPI summary, rolling period deltas, stacked daily outcome chart, automated incident detection (7–9 Nov outage annotation), and Needs Attention triage banner.</em></p>
+</div>
+
+### 2. Webhook Ingestion & Event Inspection
+<div align="center">
+  <img src="./docs/screenshots/events.png" alt="Webhook Events List" width="850" />
+  <p><em>Webhook Events: Status chips with live counts, compact idempotency keys, receipt relative timestamps, and one-click inspector.</em></p>
+</div>
+
+### 3. Event Detail & End-to-End Processing Timeline
+<div align="center">
+  <img src="./docs/screenshots/event-detail-payload.png" alt="Event Payload and Normalized Record" width="850" />
+  <p><em>Event Detail: Side-by-side raw JSON webhook payload alongside structured Normalized Client Record document.</em></p>
 </div>
 
 <div align="center">
-  <img src="./docs/screenshots/events-drawer.png" alt="Events Page & Quick Inspector Drawer" width="850" />
-  <p><em>Events Inspector: Status chips with live counts, compact idempotency keys, and right-side slide-over drawer showing raw payload and retry backoff badges.</em></p>
+  <img src="./docs/screenshots/event-detail-timeline.png" alt="Retry and Execution Timeline" width="850" />
+  <p><em>Execution Timeline: Step-by-step verification history across ingest, HMAC validation, and normalization stages.</em></p>
+</div>
+
+### 4. Normalized Records & Business Feeds
+<div align="center">
+  <img src="./docs/screenshots/records.png" alt="Normalized Records" width="850" />
+  <p><em>Normalized Records: Cross-schema unified entities extracted from incoming payloads with category categorization, amount tracking, and direct event deep-links.</em></p>
+</div>
+
+### 5. Webhook Sources & Secret Management
+<div align="center">
+  <img src="./docs/screenshots/sources.png" alt="Webhook Sources Management" width="850" />
+  <p><em>Sources Management: Registered endpoints, schema bindings, API key prefixes, and on-demand HMAC signing secret rotation.</em></p>
+</div>
+
+### 6. Role-Based Access Control & Audit Trail
+<div align="center">
+  <img src="./docs/screenshots/users-rbac.png" alt="Team and Roles RBAC" width="850" />
+  <p><em>Team & Roles: Operator administration with granular permissions (Admin, Operations Manager, Read-Only Viewer).</em></p>
 </div>
 
 <div align="center">
-  <img src="./docs/screenshots/command-palette.png" alt="Role-Aware Command Palette" width="850" />
-  <p><em>Command Palette (Ctrl+K / Cmd+K): Fast keyboard navigation, quick event search, and light/dark theme switching.</em></p>
+  <img src="./docs/screenshots/audit-log.png" alt="Immutable Security Audit Log" width="850" />
+  <p><em>Audit Log: Immutable record of platform actions including administrative logins, secret rotations, and event replays.</em></p>
 </div>
 
-> **Demo Recording**: A video walkthrough of live ingestion, replay workflows, and role permissions is available in [docs/screenshots/demo.mp4](./docs/screenshots/demo.mp4).
+### 7. Authentication Portal
+<div align="center">
+  <img src="./docs/screenshots/login.png" alt="Authentication Portal" width="850" />
+  <p><em>Authentication Portal: Secure login gateway with pipeline overview, constant-time HMAC guarantee, and atomic lease claims.</em></p>
+</div>
+
+### 8. Role-Gated UI Adaptation (Manager & Viewer Views)
+The client dynamically adapts navigation, actions, and badges according to the authenticated operator's role:
+
+<details>
+<summary><strong>Operations Manager Perspective (Click to expand)</strong></summary>
+<br />
+<div align="center">
+  <img src="./docs/screenshots/overview-manager.png" alt="Operations Manager Overview" width="850" />
+  <p><em>Operations Manager: Operational telemetry and replay controls enabled; administrative routes (Users, Audit Log) strictly omitted.</em></p>
+  <img src="./docs/screenshots/events-manager.png" alt="Operations Manager Events" width="850" />
+  <p><em>Operations Manager Events: Live inspection and event replay actions accessible.</em></p>
+</div>
+</details>
+
+<details>
+<summary><strong>Read-Only Viewer Perspective (Click to expand)</strong></summary>
+<br />
+<div align="center">
+  <img src="./docs/screenshots/overview-viewer.png" alt="Read-Only Viewer Overview" width="850" />
+  <p><em>Read-Only Viewer: High-fidelity telemetry with all mutating actions and administrative panels omitted.</em></p>
+  <img src="./docs/screenshots/events-viewer.png" alt="Read-Only Viewer Events" width="850" />
+  <p><em>Read-Only Viewer Events: Observability without mutation triggers or replay controls.</em></p>
+</div>
+</details>
 
 ---
 
