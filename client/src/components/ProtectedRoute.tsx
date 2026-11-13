@@ -8,7 +8,7 @@ export function ProtectedRoute() {
 
   if (isInitializing) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-50 p-6 dark:bg-slate-950">
+      <div className="flex min-h-screen items-center justify-center bg-[var(--bg-page)] p-6">
         <div className="w-full max-w-md">
           <LoadingState label="Restoring secure session..." />
         </div>
@@ -32,13 +32,13 @@ export function RoleRoute({ allowedRoles }: { allowedRoles: UserRole[] }) {
 
   if (!allowedRoles.includes(user.role)) {
     return (
-      <div className="rounded-xl border border-rose-500/30 bg-rose-50 p-6 text-center dark:bg-rose-950/20">
-        <h2 className="text-base font-semibold text-rose-800 dark:text-rose-200">
+      <div className="rounded border border-[#FDBA74] bg-[#FFF7ED] p-6 text-center dark:border-[#52230B] dark:bg-[#2A150A]">
+        <h2 className="text-sm font-semibold text-[#9A3412] dark:text-[#FB923C]">
           Access Restricted
         </h2>
-        <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
+        <p className="mt-1 text-xs text-[#6B6B66] dark:text-[#8E8B82]">
           Your role (
-          <span className="font-medium text-slate-900 dark:text-slate-200">
+          <span className="font-mono font-medium text-[#1B1B1A] dark:text-[#ECE9E2]">
             {user.role}
           </span>
           ) does not have permission to view this page.

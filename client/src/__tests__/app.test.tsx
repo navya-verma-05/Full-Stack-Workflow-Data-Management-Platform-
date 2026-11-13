@@ -289,7 +289,7 @@ describe("Workflow Platform Frontend", () => {
     expect(getAccessToken()).toBe("mem.jwt.token.admin");
 
     // Only theme preference may reside in localStorage; web storage has zero auth tokens
-    expect(window.localStorage.getItem("workflow_theme")).toBe("dark");
+    expect(window.localStorage.getItem("workflow_theme")).toBe("light");
     expect(window.localStorage.getItem("token")).toBeNull();
     expect(window.localStorage.getItem("accessToken")).toBeNull();
     expect(window.sessionStorage.length).toBe(0);
@@ -385,7 +385,9 @@ describe("Workflow Platform Frontend", () => {
     vi.stubGlobal("fetch", fetchMock);
     renderAppAt(["/"]);
 
-    expect(await screen.findByText("Needs Attention")).toBeInTheDocument();
+    expect(
+      await screen.findByRole("heading", { name: /Needs Attention/i }),
+    ).toBeInTheDocument();
     expect(
       await screen.findByText(/Temporary downstream timeout/i),
     ).toBeInTheDocument();
@@ -687,19 +689,19 @@ describe("Workflow Platform Frontend", () => {
     await screen.findByRole("heading", { name: /Webhook Events/i });
 
     const toggleBtn = screen.getByRole("button", {
-      name: /Switch to light theme/i,
+      name: /Switch to dark theme/i,
     });
     await user.click(toggleBtn);
 
-    expect(window.localStorage.getItem("workflow_theme")).toBe("light");
-    expect(document.documentElement.classList.contains("dark")).toBe(false);
-
-    // Switch back to dark
-    const darkBtn = screen.getByRole("button", {
-      name: /Switch to dark theme/i,
-    });
-    await user.click(darkBtn);
     expect(window.localStorage.getItem("workflow_theme")).toBe("dark");
     expect(document.documentElement.classList.contains("dark")).toBe(true);
+
+    // Switch back to light
+    const lightBtn = screen.getByRole("button", {
+      name: /Switch to light theme/i,
+    });
+    await user.click(lightBtn);
+    expect(window.localStorage.getItem("workflow_theme")).toBe("light");
+    expect(document.documentElement.classList.contains("dark")).toBe(false);
   });
 });

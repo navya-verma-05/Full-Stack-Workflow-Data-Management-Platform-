@@ -37,22 +37,22 @@ export function RetryTimeline({
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-600 dark:text-slate-400">
+      <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-[var(--text-muted)] font-mono">
         <span>
           Attempts:{" "}
-          <strong className="font-semibold text-slate-900 dark:text-white">
+          <strong className="text-[var(--text-ink)]">
             {event.attempts} / {event.maxAttempts}
           </strong>
         </span>
         {event.nextRetryAt && (
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-orange-500/30 bg-orange-500/10 px-2.5 py-0.5 text-[11px] font-medium text-orange-700 dark:text-orange-300">
+          <span className="inline-flex items-center gap-1.5 rounded border border-[#FDBA74] bg-[#FFEDD5] px-2 py-0.5 text-[11px] font-medium text-[#C2410C] dark:border-[#52230B] dark:bg-[#361808] dark:text-[#FB923C]">
             <Clock className="h-3 w-3" />
             Next retry <RelativeTime value={event.nextRetryAt} /> (
             {formatDateTime(event.nextRetryAt)})
           </span>
         )}
         {event.deadLetteredAt && (
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-rose-500/30 bg-rose-500/10 px-2.5 py-0.5 text-[11px] font-medium text-rose-700 dark:text-rose-300">
+          <span className="inline-flex items-center gap-1.5 rounded border border-[#FECACA] bg-[#FEE2E2] px-2 py-0.5 text-[11px] font-medium text-[#B91C1C] dark:border-[#541919] dark:bg-[#381111] dark:text-[#F87171]">
             <XCircle className="h-3 w-3" />
             Dead-lettered <RelativeTime value={event.deadLetteredAt} />
           </span>
@@ -60,11 +60,11 @@ export function RetryTimeline({
       </div>
 
       {event.processingLogs.length === 0 ? (
-        <p className="text-xs text-slate-500 dark:text-slate-400">
+        <p className="text-xs text-[var(--text-muted)]">
           No processing logs recorded yet.
         </p>
       ) : (
-        <ol className="relative ml-2.5 space-y-4 border-l border-slate-200 pl-5 dark:border-slate-800">
+        <ol className="relative ml-2.5 space-y-3.5 border-l border-[var(--border-hairline)] pl-5">
           {event.processingLogs.map((log, idx) => {
             const isRetry = log.stage === "retry";
             if (isRetry) retryAttemptCounter += 1;
@@ -78,10 +78,10 @@ export function RetryTimeline({
 
             const iconWrap =
               log.level === "error"
-                ? "border-rose-500/40 bg-rose-50 text-rose-600 dark:bg-rose-950 dark:text-rose-400"
+                ? "border-[#FECACA] bg-[#FEE2E2] text-[#B91C1C] dark:border-[#541919] dark:bg-[#381111] dark:text-[#F87171]"
                 : log.level === "warn"
-                  ? "border-amber-500/40 bg-amber-50 text-amber-600 dark:bg-amber-950 dark:text-amber-400"
-                  : "border-emerald-500/40 bg-emerald-50 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-400";
+                  ? "border-[#FDE68A] bg-[#FEF3C7] text-[#B45309] dark:border-[#4D3310] dark:bg-[#33220A] dark:text-[#FBBF24]"
+                  : "border-[#A5D6A7] bg-[#E8F5E9] text-[#2E7D32] dark:border-[#1E4627] dark:bg-[#132E1B] dark:text-[#4ADE80]";
 
             const StageIcon =
               log.level === "error"
@@ -95,29 +95,29 @@ export function RetryTimeline({
             return (
               <li key={`${log.timestamp}-${idx}`} className="relative">
                 <span
-                  className={`absolute -left-[29px] top-0.5 flex h-5 w-5 items-center justify-center rounded-full border ${iconWrap}`}
+                  className={`absolute -left-[27px] top-0.5 flex h-4 w-4 items-center justify-center rounded-full border ${iconWrap}`}
                 >
-                  <StageIcon className="h-3 w-3" />
+                  <StageIcon className="h-2.5 w-2.5" />
                 </span>
 
-                <div className="rounded-lg border border-slate-200 bg-slate-50/70 p-3 dark:border-slate-800/80 dark:bg-slate-950/60">
+                <div className="rounded border border-[var(--border-hairline)] bg-[var(--bg-page)] p-3">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
-                      <span className="rounded bg-slate-200/80 px-1.5 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-wide text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+                      <span className="rounded border border-[var(--border-hairline)] bg-[var(--bg-surface)] px-1.5 py-0.5 font-mono text-[10px] font-bold uppercase tracking-wider text-[var(--text-ink)]">
                         {log.stage}
                       </span>
                       {backoffMs !== null && (
-                        <span className="rounded-full border border-indigo-500/30 bg-indigo-500/10 px-2 py-0.5 font-mono text-[10px] font-medium text-indigo-700 dark:text-indigo-300">
+                        <span className="rounded border border-[var(--border-hairline)] bg-[var(--bg-surface)] px-1.5 py-0.5 font-mono text-[10px] font-semibold text-[var(--text-ink)]">
                           backoff {formatDurationMs(backoffMs)}
                         </span>
                       )}
                     </div>
-                    <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                    <span className="font-mono text-[10px] text-[var(--text-muted)]">
                       <RelativeTime value={log.timestamp} /> ·{" "}
                       {formatDateTime(log.timestamp)}
                     </span>
                   </div>
-                  <p className="mt-1.5 text-xs text-slate-700 dark:text-slate-300">
+                  <p className="mt-1 text-xs text-[var(--text-ink)] font-mono">
                     {log.message}
                   </p>
                 </div>

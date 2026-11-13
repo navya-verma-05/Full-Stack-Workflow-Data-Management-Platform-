@@ -121,10 +121,10 @@ export function SourcesPage() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">
+          <h1 className="text-xl font-bold tracking-tight text-[#1B1B1A] dark:text-[#ECE9E2]">
             Webhook Sources
           </h1>
-          <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
+          <p className="mt-0.5 text-xs text-[#6B6B66] dark:text-[#8E8B82]">
             External systems registered to deliver HMAC-SHA256 signed webhook
             payloads.
           </p>
@@ -133,7 +133,7 @@ export function SourcesPage() {
           <button
             type="button"
             onClick={() => setShowCreateForm((prev) => !prev)}
-            className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-3.5 py-2 text-xs font-medium text-white shadow-sm hover:bg-indigo-500"
+            className="inline-flex items-center gap-2 rounded bg-[#1B1B1A] px-3.5 py-2 text-xs font-medium text-[#F6F4EF] hover:bg-[#32312E] dark:bg-[#ECE9E2] dark:text-[#1B1B1A] dark:hover:bg-white"
           >
             <Plus className="h-4 w-4" />
             {showCreateForm ? "Cancel" : "New Source"}
@@ -145,21 +145,21 @@ export function SourcesPage() {
         <div
           role="region"
           aria-label="One-time source credentials"
-          className="rounded-xl border border-amber-500/40 bg-amber-50 p-4 text-xs text-amber-950 dark:bg-amber-950/30 dark:text-amber-100"
+          className="rounded border border-[#FDBA74] bg-[#FFF7ED] p-4 text-xs text-[#9A3412] dark:border-[#52230B] dark:bg-[#2A150A] dark:text-[#FB923C]"
         >
           <div className="flex items-start justify-between gap-4">
             <div className="space-y-2">
-              <div className="flex items-center gap-2 font-semibold text-amber-800 dark:text-amber-300">
+              <div className="flex items-center gap-2 font-semibold text-[#9A3412] dark:text-[#FB923C]">
                 <ShieldAlert className="h-4 w-4" />
                 Save credentials for {oneTimeSecretBanner.sourceName} now —
                 shown once only
               </div>
               {oneTimeSecretBanner.apiKey && (
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-amber-800/80 dark:text-amber-300/80">
+                  <span className="text-[#9A3412]/80 dark:text-[#FB923C]/80">
                     API Key:{" "}
                   </span>
-                  <code className="rounded bg-white px-2 py-0.5 font-mono text-amber-900 dark:bg-slate-950 dark:text-amber-200">
+                  <code className="rounded border border-[var(--border-hairline)] bg-[var(--bg-surface)] px-2 py-0.5 font-mono text-[#1B1B1A] dark:text-[#ECE9E2]">
                     {oneTimeSecretBanner.apiKey}
                   </code>
                   <button
@@ -167,7 +167,7 @@ export function SourcesPage() {
                     onClick={() =>
                       copyValue("API Key", oneTimeSecretBanner.apiKey!)
                     }
-                    className="rounded p-1 hover:bg-amber-200/50 dark:hover:bg-amber-900/50"
+                    className="rounded p-1 hover:bg-[#FED7AA]/50 dark:hover:bg-[#431407]/50"
                     aria-label="Copy API key"
                   >
                     <Copy className="h-3 w-3" />
@@ -175,10 +175,10 @@ export function SourcesPage() {
                 </div>
               )}
               <div className="flex flex-wrap items-center gap-2">
-                <span className="text-amber-800/80 dark:text-amber-300/80">
+                <span className="text-[#9A3412]/80 dark:text-[#FB923C]/80">
                   HMAC Signing Secret:{" "}
                 </span>
-                <code className="rounded bg-white px-2 py-0.5 font-mono text-amber-900 dark:bg-slate-950 dark:text-amber-200">
+                <code className="rounded border border-[var(--border-hairline)] bg-[var(--bg-surface)] px-2 py-0.5 font-mono text-[#1B1B1A] dark:text-[#ECE9E2]">
                   {oneTimeSecretBanner.signingSecret}
                 </code>
                 <button
@@ -189,7 +189,7 @@ export function SourcesPage() {
                       oneTimeSecretBanner.signingSecret,
                     )
                   }
-                  className="rounded p-1 hover:bg-amber-200/50 dark:hover:bg-amber-900/50"
+                  className="rounded p-1 hover:bg-[#FED7AA]/50 dark:hover:bg-[#431407]/50"
                   aria-label="Copy signing secret"
                 >
                   <Copy className="h-3 w-3" />
@@ -199,7 +199,7 @@ export function SourcesPage() {
             <button
               type="button"
               onClick={() => setOneTimeSecretBanner(null)}
-              className="rounded border border-amber-500/40 px-2.5 py-1 text-xs font-medium text-amber-800 hover:bg-amber-100 dark:text-amber-200 dark:hover:bg-amber-900/40"
+              className="rounded border border-[#FDBA74] px-2.5 py-1 text-xs font-medium text-[#9A3412] hover:bg-[#FFEDD5] dark:border-[#52230B] dark:text-[#FB923C] dark:hover:bg-[#431407]"
             >
               Dismiss
             </button>
@@ -210,9 +210,9 @@ export function SourcesPage() {
       {isAdmin && showCreateForm && (
         <form
           onSubmit={handleCreateSubmit}
-          className="space-y-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900/70"
+          className="space-y-4 rounded border border-[var(--border-hairline)] bg-[var(--bg-surface)] p-5"
         >
-          <h2 className="text-sm font-semibold text-slate-900 dark:text-white">
+          <h2 className="text-xs font-bold uppercase tracking-wider text-[#1B1B1A] dark:text-[#ECE9E2]">
             Create Webhook Source
           </h2>
           {createMutation.isError && (
@@ -222,7 +222,7 @@ export function SourcesPage() {
             <div>
               <label
                 htmlFor="source-name"
-                className="block text-xs font-medium text-slate-700 dark:text-slate-300"
+                className="block text-xs font-medium text-[#1B1B1A] dark:text-[#ECE9E2]"
               >
                 Source name
               </label>
@@ -233,13 +233,13 @@ export function SourcesPage() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="e.g. Marketing Web Form"
-                className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900 focus:border-indigo-500 focus:outline-none dark:border-slate-700 dark:bg-slate-950 dark:text-white"
+                className="mt-1 w-full rounded border border-[var(--border-hairline)] bg-[var(--bg-page)] px-3 py-2 text-xs text-[#1B1B1A] focus:border-[#1B1B1A] focus:outline-none dark:bg-[#141413] dark:text-[#ECE9E2] dark:focus:border-[#ECE9E2]"
               />
             </div>
             <div>
               <label
                 htmlFor="source-schema"
-                className="block text-xs font-medium text-slate-700 dark:text-slate-300"
+                className="block text-xs font-medium text-[#1B1B1A] dark:text-[#ECE9E2]"
               >
                 Schema type
               </label>
@@ -249,7 +249,7 @@ export function SourcesPage() {
                 onChange={(e) =>
                   setSchemaType(e.target.value as SourceSchemaType)
                 }
-                className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900 focus:border-indigo-500 focus:outline-none dark:border-slate-700 dark:bg-slate-950 dark:text-white"
+                className="mt-1 w-full rounded border border-[var(--border-hairline)] bg-[var(--bg-page)] px-3 py-2 text-xs text-[#1B1B1A] focus:border-[#1B1B1A] focus:outline-none dark:bg-[#141413] dark:text-[#ECE9E2] dark:focus:border-[#ECE9E2]"
               >
                 {SCHEMA_TYPES.map((t) => (
                   <option key={t.value} value={t.value}>
@@ -261,7 +261,7 @@ export function SourcesPage() {
             <div>
               <label
                 htmlFor="source-desc"
-                className="block text-xs font-medium text-slate-700 dark:text-slate-300"
+                className="block text-xs font-medium text-[#1B1B1A] dark:text-[#ECE9E2]"
               >
                 Description
               </label>
@@ -271,7 +271,7 @@ export function SourcesPage() {
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Optional integration notes"
-                className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900 focus:border-indigo-500 focus:outline-none dark:border-slate-700 dark:bg-slate-950 dark:text-white"
+                className="mt-1 w-full rounded border border-[var(--border-hairline)] bg-[var(--bg-page)] px-3 py-2 text-xs text-[#1B1B1A] focus:border-[#1B1B1A] focus:outline-none dark:bg-[#141413] dark:text-[#ECE9E2] dark:focus:border-[#ECE9E2]"
               />
             </div>
           </div>
@@ -279,7 +279,7 @@ export function SourcesPage() {
             <button
               type="submit"
               disabled={createMutation.isPending}
-              className="rounded-lg bg-indigo-600 px-4 py-2 text-xs font-medium text-white hover:bg-indigo-500 disabled:opacity-60"
+              className="rounded bg-[#1B1B1A] px-4 py-2 text-xs font-medium text-[#F6F4EF] hover:bg-[#32312E] disabled:opacity-60 dark:bg-[#ECE9E2] dark:text-[#1B1B1A] dark:hover:bg-white"
             >
               {createMutation.isPending ? "Creating..." : "Create Source"}
             </button>
@@ -304,10 +304,10 @@ export function SourcesPage() {
           description="Admins can create a webhook source to generate an API key and HMAC signing secret."
         />
       ) : (
-        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900/60">
+        <div className="overflow-hidden rounded border border-[var(--border-hairline)] bg-[var(--bg-surface)]">
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-slate-200 text-left text-xs dark:divide-slate-800">
-              <thead className="bg-slate-50 text-slate-500 dark:bg-slate-900/90 dark:text-slate-400">
+            <table className="min-w-full divide-y divide-[var(--border-hairline)] text-left text-xs">
+              <thead className="bg-[var(--bg-page)] text-[#6B6B66] dark:text-[#8E8B82] font-mono uppercase text-[10px] tracking-wider">
                 <tr>
                   <th className="px-4 py-3 font-medium">Name</th>
                   <th className="px-4 py-3 font-medium">Schema</th>
@@ -320,35 +320,35 @@ export function SourcesPage() {
                   )}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 text-slate-700 dark:divide-slate-800/80 dark:text-slate-200">
+              <tbody className="divide-y divide-[var(--border-hairline)] text-[#1B1B1A] dark:text-[#ECE9E2]">
                 {sourcesQuery.data.items.map((src) => (
                   <tr
                     key={src._id}
-                    className="hover:bg-slate-50 dark:hover:bg-slate-800/40"
+                    className="hover:bg-[var(--bg-subtle)]/60 transition-colors"
                   >
                     <td className="px-4 py-3">
-                      <div className="font-medium text-slate-900 dark:text-white">
+                      <div className="font-medium text-[#1B1B1A] dark:text-[#ECE9E2]">
                         {src.name}
                       </div>
                       {src.description && (
-                        <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                        <div className="text-[11px] text-[#6B6B66] dark:text-[#8E8B82]">
                           {src.description}
                         </div>
                       )}
                     </td>
-                    <td className="px-4 py-3 font-mono text-[11px] text-slate-600 dark:text-slate-300">
+                    <td className="px-4 py-3 font-mono text-[11px] text-[#6B6B66] dark:text-[#8E8B82]">
                       {src.schemaType}
                     </td>
-                    <td className="px-4 py-3 font-mono text-[11px] text-slate-500 dark:text-slate-400">
+                    <td className="px-4 py-3 font-mono text-[11px] text-[#6B6B66] dark:text-[#8E8B82]">
                       {src.apiKeyPrefix || "—"}
                     </td>
                     <td className="px-4 py-3">
                       <ActiveBadge active={src.active} />
                     </td>
-                    <td className="px-4 py-3 font-mono text-[11px] text-slate-500 dark:text-slate-400">
+                    <td className="px-4 py-3 font-mono text-[11px] text-[#6B6B66] dark:text-[#8E8B82]">
                       /api/webhooks/{src._id}
                     </td>
-                    <td className="px-4 py-3 text-slate-500 dark:text-slate-400">
+                    <td className="px-4 py-3 text-[#6B6B66] dark:text-[#8E8B82]">
                       <RelativeTime value={src.secretRotatedAt} />
                     </td>
                     {isAdmin && (
@@ -363,7 +363,7 @@ export function SourcesPage() {
                                 active: !src.active,
                               })
                             }
-                            className="inline-flex items-center gap-1 rounded border border-slate-300 bg-white px-2.5 py-1 text-[11px] text-slate-700 hover:bg-slate-50 disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+                            className="inline-flex items-center gap-1 rounded border border-[var(--border-hairline)] bg-[var(--bg-page)] px-2.5 py-1 text-[11px] text-[#1B1B1A] hover:bg-[var(--bg-subtle)] disabled:opacity-50 dark:bg-[#141413] dark:text-[#ECE9E2]"
                           >
                             <RefreshCw className="h-3 w-3" />
                             {src.active ? "Disable" : "Enable"}
@@ -372,7 +372,7 @@ export function SourcesPage() {
                             type="button"
                             disabled={rotateMutation.isPending}
                             onClick={() => rotateMutation.mutate(src._id)}
-                            className="inline-flex items-center gap-1 rounded border border-amber-500/40 bg-amber-50 px-2.5 py-1 text-[11px] text-amber-800 hover:bg-amber-100 disabled:opacity-50 dark:bg-amber-950/30 dark:text-amber-200 dark:hover:bg-amber-900/40"
+                            className="inline-flex items-center gap-1 rounded border border-[#FDBA74] bg-[#FFF7ED] px-2.5 py-1 text-[11px] text-[#9A3412] hover:bg-[#FFEDD5] disabled:opacity-50 dark:border-[#52230B] dark:bg-[#2A150A] dark:text-[#FB923C] dark:hover:bg-[#431407]"
                           >
                             <KeyRound className="h-3 w-3" />
                             Rotate Secret

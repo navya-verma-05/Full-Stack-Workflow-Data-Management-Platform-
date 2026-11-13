@@ -3,13 +3,10 @@ import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
   Activity,
   BarChart3,
-  Database,
   FileCheck2,
   LogOut,
   Menu,
   Moon,
-  PanelLeftClose,
-  PanelLeftOpen,
   Search,
   ShieldCheck,
   Sun,
@@ -34,6 +31,26 @@ function getPageTitle(pathname: string): string {
   return "Dashboard";
 }
 
+function PipelineLogoMark({ className = "h-5 w-5" }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M4 6h6a3 3 0 0 1 3 3v6a3 3 0 0 0 3 3h4" />
+      <circle cx="4" cy="6" r="2" fill="currentColor" />
+      <circle cx="20" cy="18" r="2" fill="currentColor" />
+      <path d="M4 18h4a3 3 0 0 0 3-3V9a3 3 0 0 1 3-3h6" />
+    </svg>
+  );
+}
+
 export function Layout() {
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
@@ -42,7 +59,6 @@ export function Layout() {
   const location = useLocation();
 
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
 
   const pageTitle = getPageTitle(location.pathname);
@@ -81,8 +97,8 @@ export function Layout() {
     navigate("/login", { replace: true });
   };
 
-  const renderNavLinks = (collapsed = false, onNavigate?: () => void) => (
-    <nav className="space-y-1" aria-label="Primary navigation">
+  const renderNavLinks = (onNavigate?: () => void) => (
+    <nav className="space-y-0.5" aria-label="Primary navigation">
       {navItems.map((item) => {
         const Icon = item.icon;
         return (
@@ -90,18 +106,17 @@ export function Layout() {
             key={item.to}
             to={item.to}
             end={item.end}
-            title={collapsed ? item.label : undefined}
             onClick={onNavigate}
             className={({ isActive }) =>
-              `flex items-center ${collapsed ? "justify-center px-2" : "gap-3 px-3"} rounded-lg py-2 text-sm font-medium transition-colors ${
+              `group flex items-center gap-2.5 px-3 py-2 text-xs font-medium transition-colors border-l-2 ${
                 isActive
-                  ? "border border-indigo-500/30 bg-indigo-50 text-indigo-700 dark:bg-indigo-600/20 dark:text-indigo-300"
-                  : "border border-transparent text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800/70 dark:hover:text-white"
+                  ? "border-[#1B1B1A] bg-[#ECE9E2] text-[#1B1B1A] font-semibold dark:border-[#ECE9E2] dark:bg-[#262522] dark:text-[#ECE9E2]"
+                  : "border-transparent text-[#6B6B66] hover:bg-[#EFECE6] hover:text-[#1B1B1A] dark:text-[#8E8B82] dark:hover:bg-[#201F1D] dark:hover:text-[#ECE9E2]"
               }`
             }
           >
-            <Icon className="h-4 w-4 shrink-0" />
-            {!collapsed && <span>{item.label}</span>}
+            <Icon className="h-4 w-4 shrink-0 transition-transform group-hover:scale-105" />
+            <span>{item.label}</span>
           </NavLink>
         );
       })}
@@ -109,107 +124,136 @@ export function Layout() {
   );
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 lg:flex">
-      {/* Desktop sidebar */}
-      <aside
-        className={`hidden shrink-0 flex-col border-r border-slate-200 bg-white p-3.5 transition-all duration-200 dark:border-slate-800 dark:bg-slate-900/70 lg:flex ${
-          sidebarCollapsed ? "w-[72px]" : "w-64"
-        }`}
-      >
-        <div
-          className={`mb-6 flex items-center ${
-            sidebarCollapsed ? "justify-center" : "justify-between px-1.5"
-          }`}
-        >
-          <div className="flex items-center gap-2.5 overflow-hidden">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-indigo-600 text-white shadow-sm">
-              <Database className="h-5 w-5" />
+    <div className="flex h-screen w-screen overflow-hidden bg-[var(--bg-page)] text-[var(--text-ink)] antialiased">
+      {/* Desktop Fixed Sidebar */}
+      <aside className="hidden lg:flex lg:flex-col lg:w-60 h-screen border-r border-[var(--border-hairline)] bg-[var(--bg-surface)] shrink-0 select-none">
+        {/* Brand Header */}
+        <div className="flex h-14 items-center justify-between border-b border-[var(--border-hairline)] px-4">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <PipelineLogoMark className="h-5 w-5 text-[#1B1B1A] dark:text-[#ECE9E2] shrink-0" />
+            <div className="min-w-0">
+              <span className="block truncate text-xs font-bold tracking-tight text-[#1B1B1A] dark:text-[#ECE9E2] uppercase">
+                Workflow Platform
+              </span>
+              <span className="block truncate font-mono text-[10px] text-[#6B6B66] dark:text-[#8E8B82]">
+                Pipeline v1.0
+              </span>
             </div>
-            {!sidebarCollapsed && (
-              <div className="min-w-0">
-                <p className="truncate text-sm font-semibold text-slate-900 dark:text-white">
-                  Workflow Platform
-                </p>
-                <p className="truncate text-xs text-slate-500 dark:text-slate-400">
-                  Ingestion & Telemetry
-                </p>
-              </div>
-            )}
           </div>
-          {!sidebarCollapsed && (
-            <button
-              type="button"
-              onClick={() => setSidebarCollapsed(true)}
-              aria-label="Collapse sidebar"
-              title="Collapse sidebar"
-              className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200"
-            >
-              <PanelLeftClose className="h-4 w-4" />
-            </button>
-          )}
         </div>
 
-        {sidebarCollapsed && (
-          <button
-            type="button"
-            onClick={() => setSidebarCollapsed(false)}
-            aria-label="Expand sidebar"
-            title="Expand sidebar"
-            className="mb-3 flex items-center justify-center rounded-lg border border-slate-200 py-1.5 text-slate-500 hover:bg-slate-100 dark:border-slate-800 dark:text-slate-400 dark:hover:bg-slate-800"
-          >
-            <PanelLeftOpen className="h-4 w-4" />
-          </button>
-        )}
+        {/* Scrollable Navigation */}
+        <div className="flex-1 overflow-y-auto px-2 py-3">
+          <div className="px-3 pb-2 pt-1">
+            <span className="font-mono text-[10px] uppercase tracking-wider text-[#6B6B66] dark:text-[#8E8B82]">
+              Navigation
+            </span>
+          </div>
+          {renderNavLinks()}
+        </div>
 
-        <div className="flex-1">{renderNavLinks(sidebarCollapsed)}</div>
-
+        {/* Bottom Pinned User Card & Sign Out */}
         {user && (
-          <div className="mt-6 border-t border-slate-200 pt-4 dark:border-slate-800">
-            {!sidebarCollapsed && (
-              <div className="mb-3 rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-800/80 dark:bg-slate-950/70">
-                <div className="flex items-center justify-between gap-2">
-                  <p className="truncate text-sm font-medium text-slate-900 dark:text-slate-100">
-                    {user.name}
-                  </p>
-                  <RoleBadge role={user.role} />
-                </div>
-                <p className="mt-1 truncate text-xs text-slate-500 dark:text-slate-400">
-                  {user.email}
+          <div className="mt-auto border-t border-[var(--border-hairline)] bg-[var(--bg-surface)] p-3 space-y-2.5">
+            <div className="rounded border border-[var(--border-hairline)] bg-[var(--bg-subtle)] p-2.5">
+              <div className="flex items-center justify-between gap-1.5">
+                <p className="truncate text-xs font-semibold text-[#1B1B1A] dark:text-[#ECE9E2]">
+                  {user.name}
                 </p>
+                <RoleBadge role={user.role} />
               </div>
-            )}
+              <p className="mt-0.5 truncate font-mono text-[11px] text-[#6B6B66] dark:text-[#8E8B82]">
+                {user.email}
+              </p>
+            </div>
             <button
               type="button"
               onClick={handleLogout}
-              title={sidebarCollapsed ? "Sign out" : undefined}
-              className="flex w-full items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 transition-colors hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-200 dark:hover:bg-slate-800"
+              className="flex w-full items-center justify-center gap-1.5 rounded border border-[var(--border-hairline)] bg-[var(--bg-surface)] px-3 py-1.5 text-xs font-medium text-[#1B1B1A] hover:bg-[var(--bg-subtle)] dark:text-[#ECE9E2] transition-colors"
             >
-              <LogOut className="h-3.5 w-3.5 shrink-0" />
-              {!sidebarCollapsed && <span>Sign out</span>}
+              <LogOut className="h-3.5 w-3.5" />
+              <span>Sign out</span>
             </button>
           </div>
         )}
       </aside>
 
-      <div className="flex min-w-0 flex-1 flex-col">
-        {/* Top bar (desktop & mobile) */}
-        <header className="sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-slate-200 bg-white/90 px-4 py-2.5 backdrop-blur dark:border-slate-800 dark:bg-slate-950/85 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-3">
+      {/* Mobile Off-Canvas Drawer */}
+      {mobileOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden">
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 bg-black/50 transition-opacity"
+            onClick={() => setMobileOpen(false)}
+            aria-hidden="true"
+          />
+
+          {/* Off-canvas panel */}
+          <div className="fixed inset-y-0 left-0 flex w-72 flex-col border-r border-[var(--border-hairline)] bg-[var(--bg-surface)] shadow-xl z-50">
+            <div className="flex h-14 items-center justify-between border-b border-[var(--border-hairline)] px-4">
+              <div className="flex items-center gap-2">
+                <PipelineLogoMark className="h-5 w-5 text-[#1B1B1A] dark:text-[#ECE9E2]" />
+                <span className="text-xs font-bold uppercase tracking-tight text-[#1B1B1A] dark:text-[#ECE9E2]">
+                  Workflow Platform
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setMobileOpen(false)}
+                aria-label="Close navigation"
+                className="rounded p-1 text-[#6B6B66] hover:bg-[var(--bg-subtle)] hover:text-[#1B1B1A] dark:text-[#8E8B82]"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto px-2 py-3">
+              {renderNavLinks(() => setMobileOpen(false))}
+            </div>
+
+            {user && (
+              <div className="mt-auto border-t border-[var(--border-hairline)] p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs font-semibold text-[#1B1B1A] dark:text-[#ECE9E2]">
+                      {user.name}
+                    </p>
+                    <p className="font-mono text-[11px] text-[#6B6B66] dark:text-[#8E8B82]">
+                      {user.email}
+                    </p>
+                  </div>
+                  <RoleBadge role={user.role} />
+                </div>
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="flex w-full items-center justify-center gap-1.5 rounded border border-[var(--border-hairline)] py-1.5 text-xs font-medium text-[#1B1B1A] dark:text-[#ECE9E2] hover:bg-[var(--bg-subtle)]"
+                >
+                  <LogOut className="h-3.5 w-3.5" />
+                  <span>Sign out</span>
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Main Independent Scrollable Viewport */}
+      <div className="flex flex-1 flex-col min-w-0 h-screen overflow-hidden">
+        {/* Sticky Top Bar */}
+        <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center justify-between border-b border-[var(--border-hairline)] bg-[var(--bg-surface)] px-4 sm:px-6">
+          <div className="flex items-center gap-3 min-w-0">
             <button
               type="button"
               aria-label="Toggle navigation"
-              onClick={() => setMobileOpen((prev) => !prev)}
-              className="rounded-lg border border-slate-200 p-1.5 text-slate-600 dark:border-slate-700 dark:text-slate-300 lg:hidden"
+              onClick={() => setMobileOpen(true)}
+              className="rounded border border-[var(--border-hairline)] p-1.5 text-[#6B6B66] hover:text-[#1B1B1A] hover:bg-[var(--bg-subtle)] dark:text-[#8E8B82] lg:hidden"
             >
-              {mobileOpen ? (
-                <X className="h-5 w-5" />
-              ) : (
-                <Menu className="h-5 w-5" />
-              )}
+              <Menu className="h-4 w-4" />
             </button>
-            <span className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+            <h1 className="text-sm font-semibold tracking-tight text-[#1B1B1A] dark:text-[#ECE9E2]">
               {pageTitle}
-            </span>
+            </h1>
           </div>
 
           <div className="flex items-center gap-2">
@@ -217,11 +261,11 @@ export function Layout() {
               type="button"
               onClick={() => setPaletteOpen(true)}
               aria-label="Open command palette"
-              className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs text-slate-500 transition-colors hover:border-slate-300 hover:bg-white hover:text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400 dark:hover:border-slate-700 dark:hover:text-slate-200"
+              className="inline-flex items-center gap-2 rounded border border-[var(--border-hairline)] bg-[var(--bg-page)] px-2.5 py-1 text-xs text-[#6B6B66] transition-colors hover:border-[#1B1B1A] hover:text-[#1B1B1A] dark:text-[#8E8B82] dark:hover:border-[#ECE9E2] dark:hover:text-[#ECE9E2]"
             >
               <Search className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Search events or jump...</span>
-              <kbd className="hidden rounded border border-slate-300 bg-white px-1.5 py-0.5 font-mono text-[10px] text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400 md:inline">
+              <span className="hidden sm:inline">Search...</span>
+              <kbd className="hidden rounded border border-[var(--border-hairline)] bg-[var(--bg-surface)] px-1.5 py-0.5 font-mono text-[10px] text-[#6B6B66] dark:text-[#8E8B82] md:inline">
                 Ctrl+K
               </kbd>
             </button>
@@ -231,7 +275,7 @@ export function Layout() {
               onClick={toggleTheme}
               aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}
               title={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}
-              className="rounded-lg border border-slate-200 bg-white p-1.5 text-slate-600 transition-colors hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
+              className="rounded border border-[var(--border-hairline)] bg-[var(--bg-surface)] p-1.5 text-[#6B6B66] transition-colors hover:bg-[var(--bg-subtle)] hover:text-[#1B1B1A] dark:text-[#8E8B82] dark:hover:text-[#ECE9E2]"
             >
               {theme === "dark" ? (
                 <Sun className="h-4 w-4" />
@@ -242,32 +286,11 @@ export function Layout() {
           </div>
         </header>
 
-        {/* Mobile slide-down nav */}
-        {mobileOpen && (
-          <div className="border-b border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900 lg:hidden">
-            {renderNavLinks(false, () => setMobileOpen(false))}
-            {user && (
-              <div className="mt-4 flex items-center justify-between border-t border-slate-200 pt-3 dark:border-slate-800">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-slate-600 dark:text-slate-300">
-                    {user.email}
-                  </span>
-                  <RoleBadge role={user.role} />
-                </div>
-                <button
-                  type="button"
-                  onClick={handleLogout}
-                  className="rounded-lg border border-slate-300 px-2.5 py-1 text-xs text-slate-700 dark:border-slate-700 dark:text-slate-200"
-                >
-                  Sign out
-                </button>
-              </div>
-            )}
+        {/* Independently Scrollable Page Area */}
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-[var(--bg-page)]">
+          <div className="mx-auto max-w-7xl">
+            <Outlet />
           </div>
-        )}
-
-        <main className="min-w-0 flex-1 p-4 sm:p-6 lg:p-8">
-          <Outlet />
         </main>
       </div>
 

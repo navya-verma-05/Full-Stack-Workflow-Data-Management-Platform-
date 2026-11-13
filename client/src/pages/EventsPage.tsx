@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Copy, ExternalLink, Search } from "lucide-react";
+import { ArrowRight, Copy, Search } from "lucide-react";
 import { api } from "../api/endpoints";
 import { useToast } from "../context/ToastContext";
 import type { EventStatus, WorkflowEvent } from "../types/api";
@@ -11,44 +11,41 @@ import { RelativeTime } from "../components/RelativeTime";
 import {
   EmptyState,
   ErrorState,
-  PaginationControls,
   SkeletonTable,
 } from "../components/StateFeedback";
 import { StatusBadge } from "../components/StatusBadge";
 
-type StatusChip = "" | "processed" | "invalid" | "failed" | "dead_letter";
+type StatusChip = "" | EventStatus;
 
-const STATUS_CHIPS: Array<{ value: StatusChip; label: string }> = [
-  { value: "", label: "All" },
-  { value: "processed", label: "Processed" },
-  { value: "invalid", label: "Invalid" },
-  { value: "failed", label: "Failed" },
-  { value: "dead_letter", label: "Dead-letter" },
+const STATUS_CHIPS: Array<{ label: string; value: StatusChip }> = [
+  { label: "All", value: "" },
+  { label: "Processed", value: "processed" },
+  { label: "Invalid Schema", value: "invalid" },
+  { label: "Failed", value: "failed" },
+  { label: "Dead Letter", value: "dead_letter" },
 ];
 
-function getInitialStatus(raw: string | null): StatusChip {
-  if (
-    raw === "processed" ||
-    raw === "invalid" ||
-    raw === "failed" ||
-    raw === "dead_letter"
-  ) {
-    return raw;
-  }
-  return "";
+function getInitialStatus(param: string | null): StatusChip {
+  if (!param) return "";
+  const match = STATUS_CHIPS.find((c) => c.value === param);
+  return match ? match.value : "";
 }
 
 function getClientHint(evt: WorkflowEvent): string {
-  const customer = evt.payload.customer as
-    { name?: string; email?: string } | undefined;
-  return String(
-    evt.payload.fullName ||
-      evt.payload.name ||
-      customer?.name ||
-      evt.payload.email ||
-      customer?.email ||
-      "—",
-  );
+  const p = evt.payload;
+  if (!p || typeof p !== "object") return "—";
+  if ("clientName" in p && p.clientName) return String(p.clientName);
+  if ("fullName" in p && p.fullName) return String(p.fullName);
+  if ("name" in p && p.name) return String(p.name);
+  if (
+    "customer" in p &&
+    typeof p.customer === "object" &&
+    p.customer &&
+    "name" in p.customer
+  ) {
+    return String(p.customer.name);
+  }
+  return "—";
 }
 
 export function EventsPage() {
@@ -142,12 +139,12 @@ export function EventsPage() {
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">
+        <h1 className="text-xl font-bold tracking-tight text-[#1B1B1A] dark:text-[#ECE9E2]">
           Webhook Events
         </h1>
-        <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
-          Click any row to inspect payload and retry timeline in a quick drawer,
-          or open the full page.
+        <p className="mt-0.5 text-xs text-[#6B6B66] dark:text-[#8E8B82]">
+          Click any event row to open the quick inspector drawer, or inspect its
+          full retry timeline.
         </p>
       </div>
 
@@ -166,19 +163,19 @@ export function EventsPage() {
               type="button"
               aria-pressed={active}
               onClick={() => handleStatusChange(chip.value)}
-              className={`inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-xs font-medium transition-colors ${
+              className={`inline-flex items-center gap-2 rounded border px-3 py-1 text-xs font-medium transition-colors ${
                 active
-                  ? "border-indigo-600 bg-indigo-600 text-white shadow-sm"
-                  : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900/70 dark:text-slate-300 dark:hover:bg-slate-800"
+                  ? "border-[#1B1B1A] bg-[#1B1B1A] text-[#F6F4EF] font-semibold dark:border-[#ECE9E2] dark:bg-[#ECE9E2] dark:text-[#141413]"
+                  : "border-[var(--border-hairline)] bg-[var(--bg-surface)] text-[var(--text-ink)] hover:bg-[var(--bg-subtle)]"
               }`}
             >
               <span>{chip.label}</span>
               {typeof count === "number" && (
                 <span
-                  className={`rounded-full px-1.5 py-0.5 text-[10px] tabular-nums ${
+                  className={`rounded px-1.5 py-0.2 font-mono text-[10px] tabular-nums ${
                     active
-                      ? "bg-white/20 text-white"
-                      : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
+                      ? "bg-white/20 text-white dark:bg-black/20 dark:text-black font-bold"
+                      : "bg-[var(--bg-subtle)] text-[#6B6B66] dark:text-[#8E8B82]"
                   }`}
                 >
                   {count}
@@ -190,7 +187,7 @@ export function EventsPage() {
       </div>
 
       {/* Filter toolbar */}
-      <div className="space-y-3 rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900/60">
+      <div className="space-y-3 rounded border border-[var(--border-hairline)] bg-[var(--bg-surface)] p-3.5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <DateRangePicker
             from={from}
@@ -209,7 +206,7 @@ export function EventsPage() {
               setPage(1);
               setSourceId(e.target.value);
             }}
-            className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs text-slate-800 focus:border-indigo-500 focus:outline-none dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200"
+            className="rounded border border-[var(--border-hairline)] bg-[var(--bg-page)] px-2.5 py-1 text-xs text-[var(--text-ink)] focus:outline-none"
           >
             <option value="">All sources</option>
             {(sourcesQuery.data?.items || []).map((s) => (
@@ -222,19 +219,19 @@ export function EventsPage() {
 
         <form onSubmit={handleApplySearch} className="flex flex-wrap gap-2">
           <div className="relative min-w-[220px] flex-1">
-            <Search className="pointer-events-none absolute left-3 top-2.5 h-3.5 w-3.5 text-slate-400" />
+            <Search className="pointer-events-none absolute left-2.5 top-2 h-3.5 w-3.5 text-[#6B6B66] dark:text-[#8E8B82]" />
             <input
               aria-label="Search events"
               type="text"
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
-              placeholder="Search client name, email, error message, or idempotency key..."
-              className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-8 pr-3 text-xs text-slate-900 placeholder-slate-400 focus:border-indigo-500 focus:bg-white focus:outline-none dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:placeholder-slate-500 dark:focus:bg-slate-950"
+              placeholder="Search client, email, error, or idempotency key..."
+              className="w-full rounded border border-[var(--border-hairline)] bg-[var(--bg-page)] py-1.5 pl-8 pr-3 text-xs font-mono text-[var(--text-ink)] placeholder-[#6B6B66] focus:border-[#1B1B1A] focus:outline-none dark:placeholder-[#8E8B82] dark:focus:border-[#ECE9E2]"
             />
           </div>
           <button
             type="submit"
-            className="rounded-lg bg-indigo-600 px-3.5 py-2 text-xs font-medium text-white hover:bg-indigo-500"
+            className="rounded bg-[#1B1B1A] px-3.5 py-1.5 text-xs font-medium text-[#F6F4EF] hover:bg-[#2E2E2C] dark:bg-[#ECE9E2] dark:text-[#141413] dark:hover:bg-[#FFFFFF] transition-colors"
           >
             Search
           </button>
@@ -242,7 +239,7 @@ export function EventsPage() {
             <button
               type="button"
               onClick={handleClearFilters}
-              className="rounded-lg border border-slate-200 bg-slate-100 px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+              className="rounded border border-[var(--border-hairline)] bg-[var(--bg-surface)] px-3 py-1.5 text-xs font-medium text-[var(--text-ink)] hover:bg-[var(--bg-subtle)]"
             >
               Clear
             </button>
@@ -269,20 +266,22 @@ export function EventsPage() {
           onAction={handleClearFilters}
         />
       ) : (
-        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900/60">
+        <div className="overflow-hidden rounded border border-[var(--border-hairline)] bg-[var(--bg-surface)]">
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-slate-200 text-left text-xs dark:divide-slate-800">
-              <thead className="bg-slate-50 text-slate-500 dark:bg-slate-900/90 dark:text-slate-400">
+            <table className="min-w-full divide-y divide-[var(--border-hairline)] text-left text-xs">
+              <thead className="bg-[var(--bg-page)] text-[var(--text-muted)] font-mono text-[10px] uppercase">
                 <tr>
-                  <th className="px-4 py-3 font-medium">Status</th>
-                  <th className="px-4 py-3 font-medium">Source & Client</th>
-                  <th className="px-4 py-3 font-medium">Idempotency Key</th>
-                  <th className="px-4 py-3 font-medium">Attempts</th>
-                  <th className="px-4 py-3 font-medium">Received</th>
-                  <th className="px-4 py-3 text-right font-medium">Actions</th>
+                  <th className="px-3.5 py-2.5 font-medium">Status</th>
+                  <th className="px-3.5 py-2.5 font-medium">Source & Client</th>
+                  <th className="px-3.5 py-2.5 font-medium">Idempotency Key</th>
+                  <th className="px-3.5 py-2.5 font-medium">Attempts</th>
+                  <th className="px-3.5 py-2.5 font-medium">Received</th>
+                  <th className="px-3.5 py-2.5 text-right font-medium">
+                    Action
+                  </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 text-slate-700 dark:divide-slate-800/80 dark:text-slate-200">
+              <tbody className="divide-y divide-[var(--border-hairline)] text-[var(--text-ink)]">
                 {eventsQuery.data.items.map((evt) => {
                   const sourceName =
                     evt.source?.name ||
@@ -301,24 +300,24 @@ export function EventsPage() {
                         }
                       }}
                       tabIndex={0}
-                      className="cursor-pointer transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/40"
+                      className="cursor-pointer transition-colors hover:bg-[var(--bg-subtle)] focus:bg-[var(--bg-subtle)]"
                     >
-                      <td className="px-4 py-3">
+                      <td className="px-3.5 py-2.5">
                         <StatusBadge status={evt.status} />
                       </td>
-                      <td className="px-4 py-3">
-                        <div className="font-medium text-slate-900 dark:text-white">
+                      <td className="px-3.5 py-2.5">
+                        <div className="font-semibold text-[var(--text-ink)]">
                           {sourceName}
                         </div>
-                        <div className="truncate text-[11px] text-slate-500 dark:text-slate-400">
+                        <div className="truncate font-mono text-[11px] text-[var(--text-muted)]">
                           {getClientHint(evt)}
                         </div>
                       </td>
-                      <td className="px-4 py-3">
-                        <div className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-slate-50 px-2 py-0.5 dark:border-slate-800 dark:bg-slate-950/70">
+                      <td className="px-3.5 py-2.5">
+                        <div className="inline-flex items-center gap-1.5 rounded border border-[var(--border-hairline)] bg-[var(--bg-page)] px-2 py-0.5">
                           <code
                             title={evt.idempotencyKey}
-                            className="max-w-[140px] truncate font-mono text-[11px] text-slate-600 dark:text-slate-300"
+                            className="max-w-[140px] truncate font-mono text-[11px] text-[var(--text-ink)]"
                           >
                             {evt.idempotencyKey}
                           </code>
@@ -328,27 +327,28 @@ export function EventsPage() {
                             onClick={(e) =>
                               handleCopyKey(e, evt.idempotencyKey)
                             }
-                            className="rounded p-0.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
+                            className="rounded p-0.5 text-[var(--text-muted)] hover:text-[var(--text-ink)]"
                           >
                             <Copy className="h-3 w-3" />
                           </button>
                         </div>
                       </td>
-                      <td className="px-4 py-3 tabular-nums text-slate-600 dark:text-slate-300">
+                      <td className="px-3.5 py-2.5 font-mono tabular-nums text-[var(--text-muted)]">
                         {evt.attempts} / {evt.maxAttempts}
                       </td>
-                      <td className="px-4 py-3 text-slate-500 dark:text-slate-400">
+                      <td className="px-3.5 py-2.5 text-[var(--text-muted)] font-mono text-[11px]">
                         <RelativeTime value={evt.receivedAt} />
                       </td>
                       <td
-                        className="px-4 py-3 text-right"
+                        className="px-3.5 py-2.5 text-right"
                         onClick={(e) => e.stopPropagation()}
                       >
                         <Link
                           to={`/events/${evt._id}`}
-                          className="inline-flex items-center gap-1 font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300"
+                          className="inline-flex items-center gap-1 font-mono text-[11px] text-[var(--text-ink)] hover:underline"
                         >
-                          Inspect <ExternalLink className="h-3 w-3" />
+                          <span>Open</span>
+                          <ArrowRight className="h-3 w-3" />
                         </Link>
                       </td>
                     </tr>
@@ -358,18 +358,47 @@ export function EventsPage() {
             </table>
           </div>
 
-          <PaginationControls
-            pagination={eventsQuery.data.pagination}
-            onPageChange={setPage}
-          />
+          {eventsQuery.data.pagination && (
+            <div className="flex items-center justify-between border-t border-[var(--border-hairline)] px-4 py-2.5 text-xs text-[var(--text-muted)]">
+              <span>
+                Page{" "}
+                <strong className="font-mono text-[var(--text-ink)]">
+                  {eventsQuery.data.pagination.page}
+                </strong>{" "}
+                of{" "}
+                <strong className="font-mono text-[var(--text-ink)]">
+                  {eventsQuery.data.pagination.totalPages}
+                </strong>{" "}
+                ({eventsQuery.data.pagination.total} events)
+              </span>
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  disabled={eventsQuery.data.pagination.page <= 1}
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  className="rounded border border-[var(--border-hairline)] bg-[var(--bg-surface)] px-2.5 py-1 text-xs text-[var(--text-ink)] hover:bg-[var(--bg-subtle)] disabled:opacity-40"
+                >
+                  Previous
+                </button>
+                <button
+                  type="button"
+                  disabled={
+                    eventsQuery.data.pagination.page >=
+                    eventsQuery.data.pagination.totalPages
+                  }
+                  onClick={() => setPage((p) => p + 1)}
+                  className="rounded border border-[var(--border-hairline)] bg-[var(--bg-surface)] px-2.5 py-1 text-xs text-[var(--text-ink)] hover:bg-[var(--bg-subtle)] disabled:opacity-40"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
-      <EventDrawer
-        eventId={drawerEvent?._id || null}
-        initialEvent={drawerEvent}
-        onClose={() => setDrawerEvent(null)}
-      />
+      {/* Slide-over quick inspector drawer */}
+      <EventDrawer event={drawerEvent} onClose={() => setDrawerEvent(null)} />
     </div>
   );
 }

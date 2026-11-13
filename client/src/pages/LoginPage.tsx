@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import {
   ArrowRight,
   CheckCircle2,
-  Database,
   FileCheck2,
   Lock,
   Moon,
@@ -22,33 +21,48 @@ const PIPELINE_STEPS = [
     label: "Source",
     sub: "Web, CRM, Partner",
     icon: Webhook,
-    tone: "bg-sky-500/15 text-sky-600 dark:text-sky-300 border-sky-500/30",
   },
   {
     label: "Verify",
     sub: "HMAC + Replay guard",
     icon: ShieldCheck,
-    tone: "bg-indigo-500/15 text-indigo-600 dark:text-indigo-300 border-indigo-500/30",
   },
   {
     label: "Validate",
     sub: "Per-source schema",
     icon: CheckCircle2,
-    tone: "bg-violet-500/15 text-violet-600 dark:text-violet-300 border-violet-500/30",
   },
   {
     label: "Queue",
     sub: "Backoff & DLQ",
     icon: RefreshCw,
-    tone: "bg-amber-500/15 text-amber-600 dark:text-amber-300 border-amber-500/30",
   },
   {
     label: "Records",
     sub: "Normalized output",
     icon: FileCheck2,
-    tone: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-300 border-emerald-500/30",
   },
 ];
+
+function PipelineLogoMark({ className = "h-5 w-5" }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M4 6h6a3 3 0 0 1 3 3v6a3 3 0 0 0 3 3h4" />
+      <circle cx="4" cy="6" r="2" fill="currentColor" />
+      <circle cx="20" cy="18" r="2" fill="currentColor" />
+      <path d="M4 18h4a3 3 0 0 0 3-3V9a3 3 0 0 1 3-3h6" />
+    </svg>
+  );
+}
 
 export function LoginPage() {
   const { user, login } = useAuth();
@@ -91,12 +105,13 @@ export function LoginPage() {
   };
 
   return (
-    <div className="relative flex min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
+    <div className="relative flex min-h-screen items-center justify-center bg-[var(--bg-page)] text-[var(--text-ink)] antialiased">
+      {/* Theme toggle in top right */}
       <button
         type="button"
         onClick={toggleTheme}
         aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}
-        className="absolute right-4 top-4 z-10 rounded-lg border border-slate-200 bg-white p-2 text-slate-600 shadow-sm hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
+        className="absolute right-4 top-4 z-10 rounded border border-[var(--border-hairline)] bg-[var(--bg-surface)] p-2 text-[#6B6B66] hover:text-[#1B1B1A] dark:text-[#8E8B82] dark:hover:text-[#ECE9E2] transition-colors"
       >
         {theme === "dark" ? (
           <Sun className="h-4 w-4" />
@@ -105,54 +120,52 @@ export function LoginPage() {
         )}
       </button>
 
-      <div className="mx-auto grid w-full max-w-6xl grid-cols-1 items-center gap-10 px-6 py-12 lg:grid-cols-12">
-        {/* Product pitch + pipeline illustration */}
-        <section className="space-y-8 lg:col-span-7">
-          <div className="inline-flex items-center gap-2 rounded-full border border-indigo-500/30 bg-indigo-50 px-3 py-1 text-xs font-medium text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-300">
-            <span className="h-1.5 w-1.5 rounded-full bg-indigo-500" />
-            Webhook Ingestion & Reliability Control Plane
+      <div className="mx-auto grid w-full max-w-6xl grid-cols-1 items-center gap-12 px-6 py-12 lg:grid-cols-12">
+        {/* Product Pitch & Ink-on-Paper Pipeline Diagram */}
+        <section className="space-y-6 lg:col-span-7">
+          <div className="inline-flex items-center gap-2 rounded border border-[var(--border-hairline)] bg-[var(--bg-surface)] px-2.5 py-1 text-xs font-mono uppercase tracking-wider text-[#6B6B66] dark:text-[#8E8B82]">
+            <span className="h-1.5 w-1.5 rounded-full bg-[#1B1B1A] dark:bg-[#ECE9E2]" />
+            Webhook Ingestion & Reliability Platform
           </div>
 
           <div className="space-y-3">
-            <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-4xl">
+            <h1 className="text-3xl font-bold tracking-tight text-[#1B1B1A] dark:text-[#ECE9E2] sm:text-4xl">
               Every inbound webhook verified, normalized, and observable.
             </h1>
-            <p className="max-w-xl text-sm leading-relaxed text-slate-600 dark:text-slate-400">
-              Workflow Platform ingests signed payloads across web forms, CRMs,
-              and partner feeds, enforces per-source Zod schemas and idempotency
-              keys, retries transient failures with exponential backoff, and
-              gives your team full audit telemetry.
+            <p className="max-w-xl text-sm leading-relaxed text-[#6B6B66] dark:text-[#8E8B82]">
+              Workflow Platform ingests signed payloads across web forms, CRM
+              deal transitions, and B2B partner purchase feeds. Enforces
+              per-source Zod schemas, deduplicates deliveries via idempotency
+              keys, and schedules exponential retries.
             </p>
           </div>
 
-          {/* Pipeline flow diagram */}
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900/60">
-            <p className="mb-4 text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+          {/* Simple ink-on-paper line diagram: Source -> Verify -> Validate -> Queue -> Records */}
+          <div className="rounded border border-[var(--border-hairline)] bg-[var(--bg-surface)] p-5">
+            <p className="mb-3 font-mono text-[11px] font-semibold uppercase tracking-wider text-[#6B6B66] dark:text-[#8E8B82]">
               Event Processing Pipeline
             </p>
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               {PIPELINE_STEPS.map((step, index) => {
                 const Icon = step.icon;
                 return (
                   <div
                     key={step.label}
-                    className="flex flex-1 items-center gap-2"
+                    className="flex flex-1 items-center gap-1.5"
                   >
-                    <div className="flex-1 rounded-xl border border-slate-200 bg-slate-50 p-3 text-center dark:border-slate-800 dark:bg-slate-950/70">
-                      <div
-                        className={`mx-auto mb-2 flex h-8 w-8 items-center justify-center rounded-lg border ${step.tone}`}
-                      >
-                        <Icon className="h-4 w-4" />
+                    <div className="flex-1 rounded border border-[var(--border-hairline)] bg-[var(--bg-page)] p-2.5 text-center">
+                      <div className="mx-auto mb-1.5 flex h-7 w-7 items-center justify-center rounded border border-[var(--border-hairline)] bg-[var(--bg-surface)] text-[#1B1B1A] dark:text-[#ECE9E2]">
+                        <Icon className="h-3.5 w-3.5" />
                       </div>
-                      <p className="text-xs font-semibold text-slate-900 dark:text-white">
+                      <p className="text-xs font-bold text-[#1B1B1A] dark:text-[#ECE9E2]">
                         {step.label}
                       </p>
-                      <p className="mt-0.5 text-[10px] text-slate-500 dark:text-slate-400">
+                      <p className="mt-0.5 font-mono text-[10px] text-[#6B6B66] dark:text-[#8E8B82]">
                         {step.sub}
                       </p>
                     </div>
                     {index < PIPELINE_STEPS.length - 1 && (
-                      <ArrowRight className="hidden h-4 w-4 shrink-0 text-slate-400 sm:block" />
+                      <ArrowRight className="hidden h-3.5 w-3.5 shrink-0 text-[#6B6B66] dark:text-[#8E8B82] sm:block" />
                     )}
                   </div>
                 );
@@ -160,48 +173,44 @@ export function LoginPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 gap-4 text-xs text-slate-600 dark:text-slate-400 sm:grid-cols-3">
-            <div className="rounded-xl border border-slate-200 bg-white/80 p-3.5 dark:border-slate-800/80 dark:bg-slate-900/40">
-              <p className="font-semibold text-slate-900 dark:text-slate-200">
+          <div className="grid grid-cols-1 gap-3 text-xs text-[#6B6B66] dark:text-[#8E8B82] sm:grid-cols-3">
+            <div className="rounded border border-[var(--border-hairline)] bg-[var(--bg-surface)] p-3">
+              <p className="font-semibold text-[#1B1B1A] dark:text-[#ECE9E2]">
                 Constant-Time HMAC
               </p>
-              <p className="mt-1">
-                Raw-body SHA-256 verification and replay-window enforcement.
+              <p className="mt-1 text-[11px]">
+                Raw-body SHA-256 verification and replay protection.
               </p>
             </div>
-            <div className="rounded-xl border border-slate-200 bg-white/80 p-3.5 dark:border-slate-800/80 dark:bg-slate-900/40">
-              <p className="font-semibold text-slate-900 dark:text-slate-200">
-                Atomic Retry Worker
+            <div className="rounded border border-[var(--border-hairline)] bg-[var(--bg-surface)] p-3">
+              <p className="font-semibold text-[#1B1B1A] dark:text-[#ECE9E2]">
+                Atomic Lease Claims
               </p>
-              <p className="mt-1">
-                Exponential backoff scheduling with automatic dead-letter
-                replay.
+              <p className="mt-1 text-[11px]">
+                Exponential backoff scheduling with dead-letter queueing.
               </p>
             </div>
-            <div className="rounded-xl border border-slate-200 bg-white/80 p-3.5 dark:border-slate-800/80 dark:bg-slate-900/40">
-              <p className="font-semibold text-slate-900 dark:text-slate-200">
+            <div className="rounded border border-[var(--border-hairline)] bg-[var(--bg-surface)] p-3">
+              <p className="font-semibold text-[#1B1B1A] dark:text-[#ECE9E2]">
                 Strict RBAC
               </p>
-              <p className="mt-1">
-                In-memory access tokens, httpOnly refresh cookies, and audit
-                trails.
+              <p className="mt-1 text-[11px]">
+                In-memory access tokens with httpOnly refresh cookies.
               </p>
             </div>
           </div>
         </section>
 
-        {/* Sign-in card */}
+        {/* Clean Sign-in Card */}
         <section className="lg:col-span-5">
-          <div className="mx-auto w-full max-w-md rounded-2xl border border-slate-200 bg-white p-8 shadow-xl dark:border-slate-800 dark:bg-slate-900/85">
+          <div className="mx-auto w-full max-w-md rounded border border-[var(--border-hairline)] bg-[var(--bg-surface)] p-7 shadow-none">
             <div className="mb-6 flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-sm">
-                <Database className="h-5 w-5" />
-              </div>
+              <PipelineLogoMark className="h-6 w-6 text-[#1B1B1A] dark:text-[#ECE9E2] shrink-0" />
               <div>
-                <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
+                <h2 className="text-base font-bold text-[#1B1B1A] dark:text-[#ECE9E2]">
                   Workflow Platform
                 </h2>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
+                <p className="text-xs text-[#6B6B66] dark:text-[#8E8B82]">
                   Sign in to the operations dashboard
                 </p>
               </div>
@@ -210,7 +219,7 @@ export function LoginPage() {
             {error && (
               <div
                 role="alert"
-                className="mb-4 rounded-lg border border-rose-500/40 bg-rose-50 px-3.5 py-2.5 text-sm text-rose-700 dark:bg-rose-950/40 dark:text-rose-200"
+                className="mb-4 rounded border border-[#FECACA] bg-[#FEE2E2] px-3.5 py-2 text-xs font-medium text-[#B91C1C] dark:border-[#541919] dark:bg-[#381111] dark:text-[#F87171]"
               >
                 {error}
               </div>
@@ -220,7 +229,7 @@ export function LoginPage() {
               <div>
                 <label
                   htmlFor="email"
-                  className="mb-1.5 block text-xs font-medium text-slate-700 dark:text-slate-300"
+                  className="mb-1 block text-xs font-medium text-[#1B1B1A] dark:text-[#ECE9E2]"
                 >
                   Email address
                 </label>
@@ -231,15 +240,15 @@ export function LoginPage() {
                   autoComplete="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@company.com"
-                  className="w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:border-indigo-500 focus:outline-none dark:border-slate-700 dark:bg-slate-950 dark:text-white dark:placeholder-slate-500"
+                  placeholder="admin@workflow.local"
+                  className="w-full rounded border border-[var(--border-hairline)] bg-[var(--bg-page)] px-3 py-2 text-xs font-mono text-[#1B1B1A] placeholder-[#6B6B66] focus:border-[#1B1B1A] focus:outline-none dark:text-[#ECE9E2] dark:placeholder-[#8E8B82] dark:focus:border-[#ECE9E2]"
                 />
               </div>
 
               <div>
                 <label
                   htmlFor="password"
-                  className="mb-1.5 block text-xs font-medium text-slate-700 dark:text-slate-300"
+                  className="mb-1 block text-xs font-medium text-[#1B1B1A] dark:text-[#ECE9E2]"
                 >
                   Password
                 </label>
@@ -251,21 +260,21 @@ export function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter password"
-                  className="w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:border-indigo-500 focus:outline-none dark:border-slate-700 dark:bg-slate-950 dark:text-white dark:placeholder-slate-500"
+                  className="w-full rounded border border-[var(--border-hairline)] bg-[var(--bg-page)] px-3 py-2 text-xs font-mono text-[#1B1B1A] placeholder-[#6B6B66] focus:border-[#1B1B1A] focus:outline-none dark:text-[#ECE9E2] dark:placeholder-[#8E8B82] dark:focus:border-[#ECE9E2]"
                 />
               </div>
 
               <button
                 type="submit"
                 disabled={submitting}
-                className="flex w-full items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-60"
+                className="flex w-full items-center justify-center gap-2 rounded bg-[#1B1B1A] px-4 py-2 text-xs font-medium text-[#F6F4EF] hover:bg-[#2E2E2C] dark:bg-[#ECE9E2] dark:text-[#141413] dark:hover:bg-[#FFFFFF] transition-colors disabled:cursor-not-allowed disabled:opacity-60"
               >
-                <Lock className="h-4 w-4" />
-                {submitting ? "Signing in..." : "Sign in"}
+                <Lock className="h-3.5 w-3.5" />
+                <span>{submitting ? "Signing in..." : "Sign in"}</span>
               </button>
             </form>
 
-            <p className="mt-5 text-center text-[11px] text-slate-500 dark:text-slate-400">
+            <p className="mt-5 text-center font-mono text-[11px] text-[#6B6B66] dark:text-[#8E8B82]">
               Access tokens are kept strictly in memory with httpOnly refresh
               cookies.
             </p>

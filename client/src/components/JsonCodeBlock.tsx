@@ -54,12 +54,12 @@ function tokenizeJson(formatted: string): JsonToken[] {
 }
 
 const TOKEN_CLASSES: Record<TokenKind, string> = {
-  key: "text-indigo-700 dark:text-indigo-300 font-medium",
-  string: "text-emerald-700 dark:text-emerald-300",
-  number: "text-amber-700 dark:text-amber-300",
-  boolean: "text-sky-700 dark:text-sky-300 font-medium",
-  null: "text-rose-600 dark:text-rose-400 italic",
-  punctuation: "text-slate-500 dark:text-slate-400",
+  key: "text-[#1B1B1A] dark:text-[#ECE9E2] font-semibold",
+  string: "text-[#2E7D32] dark:text-[#4ADE80]",
+  number: "text-[#B45309] dark:text-[#FBBF24]",
+  boolean: "text-[#C2410C] dark:text-[#FB923C] font-semibold",
+  null: "text-[#B91C1C] dark:text-[#F87171] font-semibold",
+  punctuation: "text-[#6B6B66] dark:text-[#8E8B82]",
 };
 
 export function JsonCodeBlock({
@@ -92,14 +92,14 @@ export function JsonCodeBlock({
   };
 
   return (
-    <div className="flex flex-col overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900/60">
-      <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-4 py-2.5 dark:border-slate-800 dark:bg-slate-900/90">
+    <div className="flex flex-col overflow-hidden rounded border border-[var(--border-hairline)] bg-[var(--bg-surface)]">
+      <div className="flex items-center justify-between border-b border-[var(--border-hairline)] bg-[var(--bg-page)] px-4 py-2.5">
         <div>
-          <h3 className="text-xs font-semibold text-slate-900 dark:text-white">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-[#1B1B1A] dark:text-[#ECE9E2]">
             {title}
           </h3>
           {subtitle && (
-            <p className="text-[11px] text-slate-500 dark:text-slate-400">
+            <p className="font-mono text-[11px] text-[#6B6B66] dark:text-[#8E8B82]">
               {subtitle}
             </p>
           )}
@@ -108,23 +108,23 @@ export function JsonCodeBlock({
           type="button"
           onClick={handleCopy}
           aria-label={`Copy ${title}`}
-          className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-medium text-slate-700 transition-colors hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+          className="inline-flex items-center gap-1.5 rounded border border-[var(--border-hairline)] bg-[var(--bg-surface)] px-2.5 py-1 text-[11px] font-mono text-[var(--text-ink)] hover:bg-[var(--bg-subtle)] transition-colors"
         >
           {copied ? (
             <>
-              <Check className="h-3 w-3 text-emerald-500" />
-              Copied
+              <Check className="h-3 w-3 text-[#2E7D32] dark:text-[#4ADE80]" />
+              <span>Copied</span>
             </>
           ) : (
             <>
               <Copy className="h-3 w-3" />
-              Copy JSON
+              <span>Copy JSON</span>
             </>
           )}
         </button>
       </div>
       <pre
-        className={`${maxHeightClass} overflow-auto bg-slate-50/70 p-4 font-mono text-xs leading-relaxed dark:bg-slate-950/90`}
+        className={`${maxHeightClass} overflow-auto bg-[var(--bg-page)] p-4 font-mono text-xs leading-relaxed`}
       >
         <code>
           {tokens.map((tok, index) => (

@@ -14,19 +14,19 @@ import { ErrorState, LoadingState } from "./StateFeedback";
 import { StatusBadge } from "./StatusBadge";
 
 interface EventDrawerProps {
-  eventId: string | null;
-  initialEvent?: WorkflowEvent | null;
+  event: WorkflowEvent | null;
   onClose: () => void;
 }
 
 export function EventDrawer({
-  eventId,
-  initialEvent,
+  event: initialEvent,
   onClose,
 }: EventDrawerProps) {
   const { user } = useAuth();
   const toast = useToast();
   const queryClient = useQueryClient();
+
+  const eventId = initialEvent?._id || null;
 
   useEffect(() => {
     if (!eventId) return undefined;
@@ -90,38 +90,38 @@ export function EventDrawer({
       role="dialog"
       aria-modal="true"
       aria-label="Event quick inspector"
-      className="fixed inset-0 z-40 flex justify-end bg-slate-950/50 backdrop-blur-[2px]"
+      className="fixed inset-0 z-50 flex justify-end bg-black/40 backdrop-blur-[1px]"
       onClick={onClose}
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="flex h-full w-full max-w-2xl flex-col border-l border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-950"
+        className="flex h-full w-full max-w-2xl flex-col border-l border-[var(--border-hairline)] bg-[var(--bg-surface)] shadow-2xl"
       >
-        <div className="flex items-start justify-between gap-4 border-b border-slate-200 px-6 py-4 dark:border-slate-800">
+        <div className="flex items-start justify-between gap-4 border-b border-[var(--border-hairline)] px-6 py-4">
           <div className="min-w-0 space-y-1">
-            <div className="flex flex-wrap items-center gap-2.5">
+            <div className="flex flex-wrap items-center gap-2">
               {event && <StatusBadge status={event.status} />}
-              <span className="text-xs font-medium text-slate-600 dark:text-slate-300">
+              <span className="text-xs font-semibold text-[var(--text-ink)]">
                 {sourceObj?.name || "Webhook Event"}
               </span>
               {event && (
-                <span className="text-xs text-slate-400">
+                <span className="font-mono text-xs text-[var(--text-muted)]">
                   · <RelativeTime value={event.receivedAt} />
                 </span>
               )}
             </div>
             {event && (
-              <div className="flex items-center gap-2">
-                <code className="truncate font-mono text-xs text-slate-700 dark:text-slate-300">
+              <div className="flex items-center gap-1.5">
+                <code className="truncate font-mono text-xs text-[var(--text-ink)]">
                   {event.idempotencyKey}
                 </code>
                 <button
                   type="button"
                   onClick={handleCopyKey}
                   aria-label="Copy event idempotency key"
-                  className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+                  className="rounded p-1 text-[var(--text-muted)] hover:bg-[var(--bg-subtle)] hover:text-[var(--text-ink)]"
                 >
-                  <Copy className="h-3.5 w-3.5" />
+                  <Copy className="h-3 w-3" />
                 </button>
               </div>
             )}
@@ -133,30 +133,33 @@ export function EventDrawer({
                 type="button"
                 disabled={replayMutation.isPending}
                 onClick={() => replayMutation.mutate()}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-indigo-500 disabled:opacity-60"
+                className="inline-flex items-center gap-1.5 rounded bg-[#1B1B1A] px-2.5 py-1 text-xs font-medium text-[#F6F4EF] hover:bg-[#2E2E2C] dark:bg-[#ECE9E2] dark:text-[#141413] dark:hover:bg-[#FFFFFF] transition-colors disabled:opacity-50"
               >
-                <RotateCcw className="h-3.5 w-3.5" />
-                {replayMutation.isPending ? "Queuing..." : "Replay"}
+                <RotateCcw className="h-3 w-3" />
+                <span>
+                  {replayMutation.isPending ? "Queuing..." : "Replay"}
+                </span>
               </button>
             )}
             <Link
               to={`/events/${eventId}`}
-              className="inline-flex items-center gap-1 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+              className="inline-flex items-center gap-1 rounded border border-[var(--border-hairline)] bg-[var(--bg-surface)] px-2.5 py-1 text-xs font-medium text-[var(--text-ink)] hover:bg-[var(--bg-subtle)]"
             >
-              Full view <ArrowUpRight className="h-3.5 w-3.5" />
+              <span>Full view</span>
+              <ArrowUpRight className="h-3 w-3" />
             </Link>
             <button
               type="button"
               onClick={onClose}
               aria-label="Close event drawer"
-              className="rounded-lg border border-slate-200 p-1.5 text-slate-500 hover:bg-slate-100 dark:border-slate-800 dark:text-slate-400 dark:hover:bg-slate-800"
+              className="rounded border border-[var(--border-hairline)] p-1 text-[var(--text-muted)] hover:bg-[var(--bg-subtle)] hover:text-[var(--text-ink)]"
             >
               <X className="h-4 w-4" />
             </button>
           </div>
         </div>
 
-        <div className="flex-1 space-y-6 overflow-y-auto p-6">
+        <div className="flex-1 space-y-5 overflow-y-auto p-6">
           {detailQuery.isLoading && !event ? (
             <LoadingState label="Loading event details..." />
           ) : detailQuery.isError ? (
@@ -166,40 +169,44 @@ export function EventDrawer({
             />
           ) : event ? (
             <>
-              <div className="grid grid-cols-2 gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 text-xs dark:border-slate-800 dark:bg-slate-900/50 sm:grid-cols-3">
+              <div className="grid grid-cols-2 gap-3 rounded border border-[var(--border-hairline)] bg-[var(--bg-page)] p-3.5 text-xs sm:grid-cols-3">
                 <div>
-                  <p className="text-slate-500 dark:text-slate-400">Received</p>
-                  <p className="mt-1 font-medium text-slate-900 dark:text-slate-100">
+                  <p className="font-mono text-[10px] uppercase text-[var(--text-muted)]">
+                    Received
+                  </p>
+                  <p className="mt-0.5 font-mono text-xs font-semibold text-[var(--text-ink)]">
                     {formatDateTime(event.receivedAt)}
                   </p>
                 </div>
                 <div>
-                  <p className="text-slate-500 dark:text-slate-400">
+                  <p className="font-mono text-[10px] uppercase text-[var(--text-muted)]">
                     Processed
                   </p>
-                  <p className="mt-1 font-medium text-slate-900 dark:text-slate-100">
+                  <p className="mt-0.5 font-mono text-xs font-semibold text-[var(--text-ink)]">
                     {event.processedAt
                       ? formatDateTime(event.processedAt)
                       : "—"}
                   </p>
                 </div>
                 <div>
-                  <p className="text-slate-500 dark:text-slate-400">Schema</p>
-                  <p className="mt-1 font-mono font-medium text-slate-900 dark:text-slate-100">
+                  <p className="font-mono text-[10px] uppercase text-[var(--text-muted)]">
+                    Schema
+                  </p>
+                  <p className="mt-0.5 font-mono text-xs font-semibold text-[var(--text-ink)]">
                     {sourceObj?.schemaType || "—"}
                   </p>
                 </div>
               </div>
 
-              {event.errors.length > 0 && (
-                <div className="rounded-xl border border-rose-500/30 bg-rose-50 p-4 dark:bg-rose-950/20">
-                  <h3 className="text-xs font-semibold text-rose-800 dark:text-rose-200">
-                    Errors ({event.errors.length})
+              {event.errors && event.errors.length > 0 && (
+                <div className="rounded border border-[#FECACA] bg-[#FEE2E2] p-3.5 text-xs dark:border-[#541919] dark:bg-[#381111]">
+                  <h3 className="font-semibold text-[#B91C1C] dark:text-[#F87171]">
+                    Validation Errors ({event.errors.length})
                   </h3>
-                  <ul className="mt-2 space-y-1.5 text-xs text-rose-700 dark:text-rose-100">
+                  <ul className="mt-1.5 space-y-1 text-[#B91C1C] dark:text-[#F87171]">
                     {event.errors.map((err, i) => (
                       <li key={`${err.field}-${i}`}>
-                        <span className="font-mono text-rose-600 dark:text-rose-300">
+                        <span className="font-mono font-semibold">
                           {err.field || "payload"}
                         </span>
                         : {err.message}
@@ -210,7 +217,7 @@ export function EventDrawer({
               )}
 
               <div>
-                <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                <h3 className="mb-2.5 font-mono text-[10px] uppercase tracking-wider text-[var(--text-muted)]">
                   Retry & Processing Timeline
                 </h3>
                 <RetryTimeline event={event} />
@@ -218,7 +225,7 @@ export function EventDrawer({
 
               <JsonCodeBlock
                 title="Raw Webhook Payload"
-                subtitle="Signed JSON received by ingestion API"
+                subtitle="Signed JSON envelope stored on ingestion"
                 data={event.payload}
                 maxHeightClass="max-h-72"
               />

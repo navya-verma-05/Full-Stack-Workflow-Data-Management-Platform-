@@ -92,3 +92,4 @@ During empirical verification, bursts exceeding 1,000 requests within a 60-secon
    The primary latency contributor in webhook ingestion is the MongoDB single-document write and index update (`events` collection index on `sourceId_1_idempotencyKey_1` and compound status indexes). Local NVMe disk writes yielded ~12-14ms per document write.
 3. **Horizontal Scaling Implications**:
    Because the worker claims jobs atomically via `findOneAndUpdate({ status: 'valid' | 'failed', nextRetryAt: { $lte: now } })`, scaling the ingestion tier horizontally behind an NGINX/ALB reverse proxy requires zero changes to the application code.
+

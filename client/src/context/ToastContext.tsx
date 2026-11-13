@@ -70,10 +70,10 @@ export function ToastProvider({ children }: { children: ReactNode }) {
         {toasts.map((item) => {
           const styles =
             item.variant === "success"
-              ? "border-emerald-500/40 bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-100"
+              ? "border-[#A5D6A7] dark:border-[#1E4627]"
               : item.variant === "error"
-                ? "border-rose-500/40 bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-100"
-                : "border-indigo-500/40 bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-100";
+                ? "border-[#FECACA] dark:border-[#541919]"
+                : "border-[var(--border-hairline)]";
 
           const Icon =
             item.variant === "success"
@@ -84,31 +84,33 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 
           const iconColor =
             item.variant === "success"
-              ? "text-emerald-500"
+              ? "text-[#2E7D32] dark:text-[#4ADE80]"
               : item.variant === "error"
-                ? "text-rose-500"
-                : "text-indigo-500";
+                ? "text-[#B91C1C] dark:text-[#F87171]"
+                : "text-[#1B1B1A] dark:text-[#ECE9E2]";
 
           return (
             <div
               key={item.id}
               role="status"
-              className={`pointer-events-auto flex items-start gap-3 rounded-xl border p-3.5 shadow-lg transition-all ${styles}`}
+              className={`pointer-events-auto flex items-start gap-3 rounded border bg-[var(--bg-surface)] p-3 text-xs text-[var(--text-ink)] shadow-md transition-all ${styles}`}
             >
               <Icon className={`mt-0.5 h-4 w-4 shrink-0 ${iconColor}`} />
               <div className="min-w-0 flex-1">
-                <p className="text-xs font-semibold">{item.title}</p>
+                <p className="font-semibold text-[var(--text-ink)]">
+                  {item.title}
+                </p>
                 {item.description && (
-                  <p className="mt-0.5 text-xs text-slate-600 dark:text-slate-400">
+                  <p className="mt-0.5 font-mono text-[11px] text-[var(--text-muted)]">
                     {item.description}
                   </p>
                 )}
               </div>
               <button
                 type="button"
-                aria-label="Dismiss notification"
                 onClick={() => dismiss(item.id)}
-                className="rounded p-0.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+                aria-label="Dismiss notification"
+                className="rounded p-0.5 text-[var(--text-muted)] hover:text-[var(--text-ink)]"
               >
                 <X className="h-3.5 w-3.5" />
               </button>
@@ -123,7 +125,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 export function useToast() {
   const ctx = useContext(ToastContext);
   if (!ctx) {
-    throw new Error("useToast must be used inside ToastProvider");
+    throw new Error("useToast must be used within ToastProvider");
   }
   return ctx;
 }

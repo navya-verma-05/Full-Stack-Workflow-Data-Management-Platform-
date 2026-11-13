@@ -17,6 +17,7 @@ import {
 import { api } from "../api/endpoints";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
+import type { WorkflowEvent } from "../types/api";
 import { StatusBadge } from "./StatusBadge";
 import { RelativeTime } from "./RelativeTime";
 
@@ -68,207 +69,211 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
     enabled: open && debounced.length >= 2,
   });
 
-  const navItems = useMemo(() => {
-    const base = [
+  const navItems = useMemo(
+    () => [
       {
         id: "nav-overview",
         label: "Overview",
-        hint: "Operational KPIs & chart",
         to: "/",
+        roles: ["admin", "manager", "viewer"],
         icon: BarChart3,
       },
       {
         id: "nav-events",
         label: "Events",
-        hint: "Webhook ingestion stream",
         to: "/events",
+        roles: ["admin", "manager", "viewer"],
         icon: Activity,
       },
       {
         id: "nav-records",
         label: "Records",
-        hint: "Normalized client records",
         to: "/records",
+        roles: ["admin", "manager", "viewer"],
         icon: FileCheck2,
       },
       {
         id: "nav-sources",
         label: "Sources",
-        hint: "Webhook endpoints & secrets",
         to: "/sources",
+        roles: ["admin", "manager", "viewer"],
         icon: Webhook,
       },
-    ];
-    if (user?.role === "admin") {
-      base.push(
-        {
-          id: "nav-users",
-          label: "Users",
-          hint: "Admin: team & roles",
-          to: "/users",
-          icon: Users,
-        },
-        {
-          id: "nav-audit",
-          label: "Audit Log",
-          hint: "Admin: security audit trail",
-          to: "/audit-logs",
-          icon: ShieldCheck,
-        },
-      );
-    }
-    return base;
-  }, [user?.role]);
+      {
+        id: "nav-users",
+        label: "Users",
+        to: "/users",
+        roles: ["admin"],
+        icon: Users,
+      },
+      {
+        id: "nav-audit-logs",
+        label: "Audit Log",
+        to: "/audit-logs",
+        roles: ["admin"],
+        icon: ShieldCheck,
+      },
+    ],
+    [],
+  );
+
+  const filteredNavItems = useMemo(() => {
+    if (!user) return [];
+    return navItems.filter((item) => item.roles.includes(user.role));
+  }, [navItems, user]);
 
   const entries = useMemo<PaletteEntry[]>(() => {
-    const lower = query.trim().toLowerCase();
-    const pageEntries: PaletteEntry[] = navItems
-      .filter(
-        (item) =>
-          !lower ||
-          item.label.toLowerCase().includes(lower) ||
-          item.hint.toLowerCase().includes(lower),
-      )
-      .map((item) => ({
-        id: item.id,
-        section: "Pages",
-        label: item.label,
-        hint: item.hint,
-        onSelect: () => {
-          navigate(item.to);
-          onClose();
-        },
-      }));
+    const q = debounced.toLowerCase();
+    const result: PaletteEntry[] = [];
 
-    const eventEntries: PaletteEntry[] = (eventsQuery.data?.items || []).map(
-      (ev) => {
-        const client =
-          String(
-            ev.payload.fullName ||
-              ev.payload.name ||
-              (ev.payload.customer as { name?: string } | undefined)?.name ||
-              "",
-          ) || "Webhook payload";
-        return {
-          id: `evt-${ev._id}`,
-          section: "Events",
-          label: ev.idempotencyKey,
-          hint: client,
+    for (const item of filteredNavItems) {
+      if (!q || item.label.toLowerCase().includes(q)) {
+        result.push({
+          id: item.id,
+          section: "Pages",
+          label: item.label,
+          hint: `Jump to ${item.label}`,
           onSelect: () => {
-            navigate(`/events/${ev._id}`);
+            navigate(item.to);
             onClose();
           },
-        };
-      },
-    );
+        });
+      }
+    }
 
-    const themeEntry: PaletteEntry = {
-      id: "pref-theme",
-      section: "Preferences",
-      label:
-        theme === "dark" ? "Switch to Light theme" : "Switch to Dark theme",
-      hint: "Saved locally",
-      onSelect: () => {
-        toggleTheme();
-        onClose();
-      },
-    };
+    if (
+      !q ||
+      "theme".includes(q) ||
+      "mode".includes(q) ||
+      "light".includes(q) ||
+      "dark".includes(q)
+    ) {
+      result.push({
+        id: "pref-theme",
+        section: "Preferences",
+        label: `Switch to ${theme === "dark" ? "Light" : "Dark"} theme`,
+        hint: `Active: ${theme} theme`,
+        onSelect: () => {
+          toggleTheme();
+          onClose();
+        },
+      });
+    }
 
-    const prefEntries =
-      !lower ||
-      themeEntry.label.toLowerCase().includes(lower) ||
-      "theme dark light".includes(lower)
-        ? [themeEntry]
-        : [];
+    const eventItems = eventsQuery.data?.items || [];
+    for (const evt of eventItems) {
+      const src =
+        typeof evt.sourceId === "object" && evt.sourceId !== null
+          ? evt.sourceId.name
+          : evt.source?.name || "Webhook";
+      result.push({
+        id: evt._id,
+        section: "Events",
+        label: evt.idempotencyKey,
+        hint: `${src} · ${evt.status}`,
+        onSelect: () => {
+          navigate(`/events/${evt._id}`);
+          onClose();
+        },
+      });
+    }
 
-    return [...pageEntries, ...eventEntries, ...prefEntries];
+    return result;
   }, [
-    eventsQuery.data?.items,
-    navItems,
-    navigate,
-    onClose,
-    query,
+    debounced,
+    filteredNavItems,
     theme,
     toggleTheme,
+    eventsQuery.data,
+    navigate,
+    onClose,
   ]);
 
   useEffect(() => {
     setActiveIndex(0);
   }, [entries.length]);
 
-  if (!open) return null;
-
-  const eventMap = new Map(
-    (eventsQuery.data?.items || []).map((ev) => [`evt-${ev._id}`, ev]),
-  );
+  const eventItems = eventsQuery.data?.items;
+  const eventMap = useMemo(() => {
+    const map = new Map<string, WorkflowEvent>();
+    for (const evt of eventItems || []) {
+      map.set(evt._id, evt);
+    }
+    return map;
+  }, [eventItems]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Escape") {
       e.preventDefault();
       onClose();
-    } else if (e.key === "ArrowDown") {
+      return;
+    }
+    if (entries.length === 0) return;
+
+    if (e.key === "ArrowDown") {
       e.preventDefault();
-      setActiveIndex((prev) =>
-        entries.length ? (prev + 1) % entries.length : 0,
-      );
+      setActiveIndex((prev) => (prev + 1) % entries.length);
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
-      setActiveIndex((prev) =>
-        entries.length ? (prev - 1 + entries.length) % entries.length : 0,
-      );
-    } else if (e.key === "Enter" && entries[activeIndex]) {
+      setActiveIndex((prev) => (prev - 1 + entries.length) % entries.length);
+    } else if (e.key === "Enter") {
       e.preventDefault();
-      entries[activeIndex].onSelect();
+      const selected = entries[activeIndex];
+      if (selected) {
+        selected.onSelect();
+      }
     }
   };
+
+  if (!open) return null;
 
   return (
     <div
       role="dialog"
       aria-modal="true"
       aria-label="Command palette"
-      onKeyDown={handleKeyDown}
-      className="fixed inset-0 z-50 flex items-start justify-center bg-slate-950/60 p-4 pt-[12vh] backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 p-4 pt-20 backdrop-blur-[1px]"
       onClick={onClose}
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-xl overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-900"
+        onKeyDown={handleKeyDown}
+        className="w-full max-w-xl overflow-hidden rounded border border-[var(--border-hairline)] bg-[var(--bg-surface)] shadow-xl"
       >
-        <div className="flex items-center gap-3 border-b border-slate-200 px-4 py-3 dark:border-slate-800">
-          <Search className="h-4 w-4 shrink-0 text-slate-400" />
+        <div className="flex items-center gap-2.5 border-b border-[var(--border-hairline)] px-3.5 py-2.5">
+          <Search className="h-4 w-4 shrink-0 text-[#6B6B66] dark:text-[#8E8B82]" />
           <input
             ref={inputRef}
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Jump to page or search events by key, client, email..."
+            placeholder="Jump to page or search events..."
             aria-label="Command palette search"
-            className="flex-1 bg-transparent text-sm text-slate-900 placeholder-slate-400 focus:outline-none dark:text-white"
+            className="flex-1 bg-transparent font-mono text-xs text-[var(--text-ink)] placeholder-[#6B6B66] focus:outline-none dark:placeholder-[#8E8B82]"
           />
           <button
             type="button"
             onClick={onClose}
             aria-label="Close command palette"
-            className="rounded-md border border-slate-200 p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:border-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+            className="rounded border border-[var(--border-hairline)] p-1 text-[var(--text-muted)] hover:bg-[var(--bg-subtle)] hover:text-[var(--text-ink)]"
           >
             <X className="h-3.5 w-3.5" />
           </button>
         </div>
 
-        <div className="max-h-80 overflow-y-auto p-2">
+        <div className="max-h-80 overflow-y-auto p-1.5">
           {debounced.length >= 2 && eventsQuery.isFetching && (
-            <p className="px-3 py-2 text-xs text-slate-500 dark:text-slate-400">
+            <p className="px-3 py-2 font-mono text-xs text-[var(--text-muted)]">
               Searching webhook events...
             </p>
           )}
 
           {entries.length === 0 ? (
-            <p className="px-3 py-8 text-center text-xs text-slate-500 dark:text-slate-400">
+            <p className="px-3 py-6 text-center text-xs text-[var(--text-muted)]">
               No matching pages or events found.
             </p>
           ) : (
-            <ul role="listbox" className="space-y-1">
+            <ul role="listbox" className="space-y-0.5">
               {entries.map((entry, idx) => {
                 const isSelected = idx === activeIndex;
                 const matchedEvent = eventMap.get(entry.id);
@@ -287,20 +292,18 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
                       type="button"
                       onMouseEnter={() => setActiveIndex(idx)}
                       onClick={entry.onSelect}
-                      className={`flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-left transition-colors ${
+                      className={`flex w-full items-center justify-between gap-3 rounded px-3 py-2 text-left text-xs transition-colors ${
                         isSelected
-                          ? "bg-indigo-50 text-indigo-900 dark:bg-indigo-600/20 dark:text-white"
-                          : "text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800/70"
+                          ? "bg-[var(--bg-subtle)] text-[var(--text-ink)] font-semibold"
+                          : "text-[var(--text-ink)] hover:bg-[var(--bg-subtle)]"
                       }`}
                     >
-                      <div className="flex min-w-0 items-center gap-3">
-                        <Icon className="h-4 w-4 shrink-0 text-slate-400" />
+                      <div className="flex min-w-0 items-center gap-2.5">
+                        <Icon className="h-3.5 w-3.5 shrink-0 text-[var(--text-muted)]" />
                         <div className="min-w-0">
-                          <p className="truncate text-xs font-medium">
-                            {entry.label}
-                          </p>
+                          <p className="truncate font-medium">{entry.label}</p>
                           {entry.hint && (
-                            <p className="truncate text-[11px] text-slate-500 dark:text-slate-400">
+                            <p className="truncate font-mono text-[10px] text-[var(--text-muted)]">
                               {entry.hint}
                             </p>
                           )}
@@ -310,12 +313,12 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
                         {matchedEvent && (
                           <>
                             <StatusBadge status={matchedEvent.status} />
-                            <span className="text-[11px] text-slate-400">
+                            <span className="font-mono text-[10px] text-[var(--text-muted)]">
                               <RelativeTime value={matchedEvent.receivedAt} />
                             </span>
                           </>
                         )}
-                        <span className="rounded bg-slate-200/70 px-1.5 py-0.5 text-[10px] font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-400">
+                        <span className="rounded border border-[var(--border-hairline)] bg-[var(--bg-page)] px-1.5 py-0.2 font-mono text-[9px] uppercase text-[var(--text-muted)]">
                           {entry.section}
                         </span>
                       </div>
@@ -327,11 +330,11 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
           )}
         </div>
 
-        <div className="flex items-center justify-between border-t border-slate-200 bg-slate-50 px-4 py-2 text-[11px] text-slate-500 dark:border-slate-800 dark:bg-slate-950/60 dark:text-slate-400">
+        <div className="flex items-center justify-between border-t border-[var(--border-hairline)] bg-[var(--bg-page)] px-3.5 py-1.5 font-mono text-[10px] text-[var(--text-muted)]">
           <div className="flex items-center gap-3">
             <span>↑↓ Navigate</span>
             <span className="inline-flex items-center gap-1">
-              <CornerDownLeft className="h-3 w-3" /> Open
+              <CornerDownLeft className="h-3 w-3" /> Select
             </span>
           </div>
           <span>ESC to close</span>

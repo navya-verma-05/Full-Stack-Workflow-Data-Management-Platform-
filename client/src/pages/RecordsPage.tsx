@@ -62,15 +62,15 @@ export function RecordsPage() {
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">
+        <h1 className="text-xl font-bold tracking-tight text-[#1B1B1A] dark:text-[#ECE9E2]">
           Normalized Records
         </h1>
-        <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
+        <p className="mt-0.5 text-xs text-[#6B6B66] dark:text-[#8E8B82]">
           Client entities extracted and standardized across webhook schemas.
         </p>
       </div>
 
-      <div className="space-y-3 rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900/60">
+      <div className="space-y-3 rounded border border-[var(--border-hairline)] bg-[var(--bg-surface)] p-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <DateRangePicker
             from={from}
@@ -92,7 +92,7 @@ export function RecordsPage() {
                 setPage(1);
                 setSourceId(e.target.value);
               }}
-              className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs text-slate-800 focus:border-indigo-500 focus:outline-none dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200"
+              className="rounded border border-[var(--border-hairline)] bg-[var(--bg-page)] px-3 py-1.5 text-xs text-[#1B1B1A] focus:border-[#1B1B1A] focus:outline-none dark:bg-[#141413] dark:text-[#ECE9E2] dark:focus:border-[#ECE9E2]"
             >
               <option value="">All sources</option>
               {(sourcesQuery.data?.items || []).map((src) => (
@@ -111,26 +111,26 @@ export function RecordsPage() {
                 setCategory(e.target.value);
               }}
               placeholder="Category (e.g. negotiation)"
-              className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs text-slate-900 placeholder-slate-400 focus:border-indigo-500 focus:outline-none dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200 dark:placeholder-slate-500"
+              className="rounded border border-[var(--border-hairline)] bg-[var(--bg-page)] px-3 py-1.5 text-xs text-[#1B1B1A] placeholder-[#6B6B66] focus:border-[#1B1B1A] focus:outline-none dark:bg-[#141413] dark:text-[#ECE9E2] dark:placeholder-[#8E8B82] dark:focus:border-[#ECE9E2]"
             />
           </div>
         </div>
 
         <form onSubmit={handleApplySearch} className="flex flex-wrap gap-2">
           <div className="relative min-w-[220px] flex-1">
-            <Search className="pointer-events-none absolute left-3 top-2.5 h-3.5 w-3.5 text-slate-400" />
+            <Search className="pointer-events-none absolute left-3 top-2.5 h-3.5 w-3.5 text-[#6B6B66] dark:text-[#8E8B82]" />
             <input
               aria-label="Search records"
               type="text"
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
               placeholder="Search client name, company, or email..."
-              className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-8 pr-3 text-xs text-slate-900 placeholder-slate-400 focus:border-indigo-500 focus:bg-white focus:outline-none dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:placeholder-slate-500"
+              className="w-full rounded border border-[var(--border-hairline)] bg-[var(--bg-page)] py-2 pl-8 pr-3 text-xs text-[#1B1B1A] placeholder-[#6B6B66] focus:border-[#1B1B1A] focus:bg-[var(--bg-surface)] focus:outline-none dark:bg-[#141413] dark:text-[#ECE9E2] dark:placeholder-[#8E8B82] dark:focus:border-[#ECE9E2]"
             />
           </div>
           <button
             type="submit"
-            className="rounded-lg bg-indigo-600 px-3.5 py-2 text-xs font-medium text-white hover:bg-indigo-500"
+            className="rounded bg-[#1B1B1A] px-3.5 py-2 text-xs font-medium text-[#F6F4EF] hover:bg-[#32312E] dark:bg-[#ECE9E2] dark:text-[#1B1B1A] dark:hover:bg-white"
           >
             Search
           </button>
@@ -138,7 +138,7 @@ export function RecordsPage() {
             <button
               type="button"
               onClick={handleClearFilters}
-              className="rounded-lg border border-slate-200 bg-slate-100 px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+              className="rounded border border-[var(--border-hairline)] bg-[var(--bg-page)] px-3 py-2 text-xs font-medium text-[#6B6B66] hover:text-[#1B1B1A] hover:bg-[var(--bg-subtle)] dark:bg-[#141413] dark:text-[#8E8B82] dark:hover:text-[#ECE9E2]"
             >
               Clear
             </button>
@@ -169,10 +169,10 @@ export function RecordsPage() {
           onAction={handleClearFilters}
         />
       ) : (
-        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900/60">
+        <div className="overflow-hidden rounded border border-[var(--border-hairline)] bg-[var(--bg-surface)]">
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-slate-200 text-left text-xs dark:divide-slate-800">
-              <thead className="bg-slate-50 text-slate-500 dark:bg-slate-900/90 dark:text-slate-400">
+            <table className="min-w-full divide-y divide-[var(--border-hairline)] text-left text-xs">
+              <thead className="bg-[var(--bg-page)] text-[#6B6B66] dark:text-[#8E8B82] font-mono uppercase text-[10px] tracking-wider">
                 <tr>
                   <th className="px-4 py-3 font-medium">Client</th>
                   <th className="px-4 py-3 font-medium">Company</th>
@@ -183,41 +183,41 @@ export function RecordsPage() {
                   <th className="px-4 py-3 text-right font-medium">Event</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 text-slate-700 dark:divide-slate-800/80 dark:text-slate-200">
+              <tbody className="divide-y divide-[var(--border-hairline)] text-[#1B1B1A] dark:text-[#ECE9E2]">
                 {recordsQuery.data.items.map((rec) => (
                   <tr
                     key={rec._id}
-                    className="hover:bg-slate-50 dark:hover:bg-slate-800/40"
+                    className="hover:bg-[var(--bg-subtle)]/60 transition-colors"
                   >
                     <td className="px-4 py-3">
-                      <div className="font-medium text-slate-900 dark:text-white">
+                      <div className="font-medium text-[#1B1B1A] dark:text-[#ECE9E2]">
                         {rec.clientName}
                       </div>
-                      <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                      <div className="font-mono text-[11px] text-[#6B6B66] dark:text-[#8E8B82]">
                         {rec.clientEmail || "—"}
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
+                    <td className="px-4 py-3 text-[#6B6B66] dark:text-[#8E8B82]">
                       {rec.company || "—"}
                     </td>
-                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
+                    <td className="px-4 py-3 text-[#6B6B66] dark:text-[#8E8B82]">
                       {rec.source?.name || rec.sourceId}
                     </td>
-                    <td className="px-4 py-3 font-mono text-[11px] text-slate-600 dark:text-slate-300">
+                    <td className="px-4 py-3 font-mono text-[11px] text-[#6B6B66] dark:text-[#8E8B82]">
                       {rec.category || "—"}
                     </td>
-                    <td className="px-4 py-3 tabular-nums font-medium text-slate-900 dark:text-slate-100">
+                    <td className="px-4 py-3 font-mono tabular-nums font-semibold text-[#1B1B1A] dark:text-[#ECE9E2]">
                       {rec.amount
                         ? `${rec.amount.toLocaleString()} ${rec.currency || "USD"}`
                         : "—"}
                     </td>
-                    <td className="px-4 py-3 text-slate-500 dark:text-slate-400">
+                    <td className="px-4 py-3 text-[#6B6B66] dark:text-[#8E8B82]">
                       <RelativeTime value={rec.normalizedAt} />
                     </td>
                     <td className="px-4 py-3 text-right">
                       <Link
                         to={`/events/${rec.eventId}`}
-                        className="inline-flex items-center gap-1 font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400"
+                        className="inline-flex items-center gap-1 font-medium text-[#1B1B1A] underline decoration-[#C2BFB6] hover:decoration-[#1B1B1A] dark:text-[#ECE9E2] dark:decoration-[#4A4843] dark:hover:decoration-white"
                       >
                         View <ExternalLink className="h-3 w-3" />
                       </Link>

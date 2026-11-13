@@ -1,9 +1,55 @@
+@import '@fontsource/ibm-plex-sans/400.css';
+@import '@fontsource/ibm-plex-sans/500.css';
+@import '@fontsource/ibm-plex-sans/600.css';
+@import '@fontsource/ibm-plex-sans/700.css';
+@import '@fontsource/ibm-plex-mono/400.css';
+@import '@fontsource/ibm-plex-mono/500.css';
+@import '@fontsource/ibm-plex-mono/600.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
+  :root {
+    --bg-page: #F6F4EF;
+    --bg-surface: #FFFFFF;
+    --bg-subtle: #ECE9E2;
+    --border-hairline: #E4E1DA;
+    --text-ink: #1B1B1A;
+    --text-muted: #6B6B66;
+    --btn-ink-bg: #1B1B1A;
+    --btn-ink-text: #F6F4EF;
+    --btn-ink-hover: #2E2E2C;
+  }
+
+  .dark {
+    --bg-page: #141413;
+    --bg-surface: #1C1C1A;
+    --bg-subtle: #262522;
+    --border-hairline: #2B2A27;
+    --text-ink: #ECE9E2;
+    --text-muted: #8E8B82;
+    --btn-ink-bg: #ECE9E2;
+    --btn-ink-text: #141413;
+    --btn-ink-hover: #FFFFFF;
+  }
+
+  * {
+    border-color: var(--border-hairline);
+  }
+
+  body {
+    background-color: var(--bg-page);
+    color: var(--text-ink);
+    font-family: 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    margin: 0;
+    padding: 0;
+  }
+
   :focus-visible {
-    @apply outline-none ring-2 ring-indigo-500 ring-offset-2 ring-offset-white dark:ring-offset-slate-950;
+    outline: none;
+    box-shadow: 0 0 0 1.5px var(--text-ink);
   }
 }

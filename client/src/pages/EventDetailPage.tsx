@@ -83,31 +83,31 @@ export function EventDetailPage() {
   return (
     <div className="space-y-6">
       {/* Header & prominent Replay action */}
-      <div className="flex flex-wrap items-start justify-between gap-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900/60">
+      <div className="flex flex-wrap items-start justify-between gap-4 rounded border border-[var(--border-hairline)] bg-[var(--bg-surface)] p-5">
         <div className="space-y-2">
           <Link
             to="/events"
-            className="inline-flex items-center gap-1.5 text-xs font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400"
+            className="inline-flex items-center gap-1.5 font-mono text-xs text-[var(--text-muted)] hover:text-[var(--text-ink)] hover:underline"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
-            Back to events
+            <span>Back to events</span>
           </Link>
           <div className="flex flex-wrap items-center gap-3">
-            <h1 className="text-xl font-semibold text-slate-900 dark:text-white">
+            <h1 className="text-lg font-bold text-[var(--text-ink)]">
               Event {event._id}
             </h1>
             <StatusBadge status={event.status} />
           </div>
-          <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-            <span>Idempotency key:</span>
-            <code className="rounded bg-slate-100 px-2 py-0.5 font-mono text-slate-800 dark:bg-slate-800 dark:text-slate-200">
+          <div className="flex flex-wrap items-center gap-2 text-xs text-[var(--text-muted)]">
+            <span className="font-mono text-[11px]">Idempotency key:</span>
+            <code className="rounded border border-[var(--border-hairline)] bg-[var(--bg-page)] px-2 py-0.5 font-mono text-[11px] text-[var(--text-ink)]">
               {event.idempotencyKey}
             </code>
             <button
               type="button"
               onClick={handleCopyKey}
               aria-label="Copy idempotency key"
-              className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+              className="rounded p-1 text-[var(--text-muted)] hover:bg-[var(--bg-subtle)] hover:text-[var(--text-ink)]"
             >
               <Copy className="h-3.5 w-3.5" />
             </button>
@@ -119,16 +119,18 @@ export function EventDetailPage() {
             type="button"
             disabled={replayMutation.isPending}
             onClick={() => replayMutation.mutate()}
-            className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-md shadow-indigo-600/20 transition-all hover:bg-indigo-500 disabled:opacity-60"
+            className="inline-flex items-center gap-2 rounded bg-[#1B1B1A] px-4 py-2 text-xs font-semibold text-[#F6F4EF] hover:bg-[#2E2E2C] dark:bg-[#ECE9E2] dark:text-[#141413] dark:hover:bg-[#FFFFFF] transition-colors disabled:opacity-60"
           >
             <RotateCcw className="h-4 w-4" />
-            {replayMutation.isPending ? "Queuing replay..." : "Replay Event"}
+            <span>
+              {replayMutation.isPending ? "Queuing replay..." : "Replay Event"}
+            </span>
           </button>
         )}
       </div>
 
       {/* Metadata summary strip */}
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <InfoTile
           label="Source"
           value={source?.name || String(event.sourceId)}
@@ -159,19 +161,19 @@ export function EventDetailPage() {
       </div>
 
       {/* Errors banner if present */}
-      {event.errors.length > 0 && (
-        <div className="rounded-xl border border-rose-500/30 bg-rose-50 p-4 dark:bg-rose-950/20">
-          <h2 className="text-sm font-semibold text-rose-800 dark:text-rose-200">
+      {event.errors && event.errors.length > 0 && (
+        <div className="rounded border border-[#FECACA] bg-[#FEE2E2] p-4 text-xs dark:border-[#541919] dark:bg-[#381111]">
+          <h2 className="font-semibold text-[#B91C1C] dark:text-[#F87171]">
             Validation & Downstream Errors ({event.errors.length})
           </h2>
-          <ul className="mt-2 space-y-1.5 text-xs text-rose-700 dark:text-rose-100">
+          <ul className="mt-1.5 space-y-1 text-[#B91C1C] dark:text-[#F87171]">
             {event.errors.map((err, idx) => (
               <li key={`${err.field}-${idx}`}>
-                <span className="font-mono font-semibold text-rose-600 dark:text-rose-300">
+                <span className="font-mono font-semibold">
                   {err.field || "payload"}
                 </span>
                 : {err.message}{" "}
-                <span className="text-rose-500/80 dark:text-rose-300/70">
+                <span className="font-mono text-[10px] opacity-75">
                   ({err.code})
                 </span>
               </li>
@@ -190,45 +192,45 @@ export function EventDetailPage() {
 
         {record ? (
           <div className="flex flex-col gap-4">
-            <div className="rounded-xl border border-emerald-500/30 bg-emerald-50/70 p-4 dark:bg-emerald-950/20">
-              <div className="mb-3 flex items-center justify-between">
-                <h2 className="text-xs font-semibold uppercase tracking-wider text-emerald-800 dark:text-emerald-200">
+            <div className="rounded border border-[#A5D6A7] bg-[#E8F5E9] p-4 text-xs dark:border-[#1E4627] dark:bg-[#132E1B]">
+              <div className="mb-2.5 flex items-center justify-between">
+                <h2 className="font-bold uppercase tracking-wider text-[#2E7D32] dark:text-[#4ADE80]">
                   Normalized Client Record
                 </h2>
-                <span className="font-mono text-[11px] text-emerald-700 dark:text-emerald-300">
+                <span className="font-mono text-[11px] text-[#2E7D32] dark:text-[#4ADE80]">
                   {record._id}
                 </span>
               </div>
-              <dl className="grid grid-cols-2 gap-3 text-xs">
+              <dl className="grid grid-cols-2 gap-3">
                 <div>
-                  <dt className="text-emerald-700/80 dark:text-emerald-300/70">
+                  <dt className="text-[10px] uppercase font-mono text-[#2E7D32] dark:text-[#4ADE80]">
                     Client
                   </dt>
-                  <dd className="mt-0.5 font-semibold text-slate-900 dark:text-white">
+                  <dd className="mt-0.5 font-semibold text-[#1B1B1A] dark:text-[#ECE9E2]">
                     {record.clientName}
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-emerald-700/80 dark:text-emerald-300/70">
+                  <dt className="text-[10px] uppercase font-mono text-[#2E7D32] dark:text-[#4ADE80]">
                     Email
                   </dt>
-                  <dd className="mt-0.5 text-slate-800 dark:text-slate-200">
+                  <dd className="mt-0.5 font-mono text-[#1B1B1A] dark:text-[#ECE9E2]">
                     {record.clientEmail || "—"}
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-emerald-700/80 dark:text-emerald-300/70">
+                  <dt className="text-[10px] uppercase font-mono text-[#2E7D32] dark:text-[#4ADE80]">
                     Company
                   </dt>
-                  <dd className="mt-0.5 text-slate-800 dark:text-slate-200">
+                  <dd className="mt-0.5 font-medium text-[#1B1B1A] dark:text-[#ECE9E2]">
                     {record.company || "—"}
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-emerald-700/80 dark:text-emerald-300/70">
+                  <dt className="text-[10px] uppercase font-mono text-[#2E7D32] dark:text-[#4ADE80]">
                     Category & Value
                   </dt>
-                  <dd className="mt-0.5 font-mono text-slate-800 dark:text-slate-200">
+                  <dd className="mt-0.5 font-mono text-[#1B1B1A] dark:text-[#ECE9E2]">
                     {record.category || "—"}
                     {record.amount
                       ? ` · ${record.amount.toLocaleString()} ${record.currency || "USD"}`
@@ -246,22 +248,23 @@ export function EventDetailPage() {
             />
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-300 bg-white p-8 text-center dark:border-slate-800 dark:bg-slate-900/40">
-            <h2 className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+          <div className="flex flex-col items-center justify-center rounded border border-dashed border-[var(--border-hairline)] bg-[var(--bg-surface)] p-8 text-center">
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-[var(--text-ink)]">
               No Normalized Record Created
             </h2>
-            <p className="mt-1.5 max-w-sm text-xs text-slate-500 dark:text-slate-400">
-              Records are only created after schema validation passes and worker
-              processing completes.
+            <p className="mt-1 max-w-sm text-xs text-[var(--text-muted)]">
+              This event has not been normalized into a business record (status:{" "}
+              {event.status}). Once processed, the normalized entity appears
+              here side-by-side with the raw ingestion envelope.
             </p>
           </div>
         )}
       </div>
 
-      {/* Retry & Processing Timeline */}
-      <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900/60">
-        <h2 className="mb-4 text-sm font-semibold text-slate-900 dark:text-white">
-          Retry & Processing Timeline
+      {/* Retry Timeline */}
+      <section className="rounded border border-[var(--border-hairline)] bg-[var(--bg-surface)] p-5">
+        <h2 className="mb-4 text-xs font-bold uppercase tracking-wider text-[var(--text-ink)]">
+          Retry & Execution Timeline
         </h2>
         <RetryTimeline event={event} />
       </section>
@@ -279,15 +282,17 @@ function InfoTile({
   mono?: boolean;
 }) {
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900/60">
-      <p className="text-xs text-slate-500 dark:text-slate-400">{label}</p>
-      <p
-        className={`mt-1 text-xs font-medium text-slate-900 dark:text-slate-100 ${
+    <div className="rounded border border-[var(--border-hairline)] bg-[var(--bg-surface)] p-3">
+      <p className="font-mono text-[10px] uppercase tracking-wider text-[var(--text-muted)]">
+        {label}
+      </p>
+      <div
+        className={`mt-1 text-xs font-semibold text-[var(--text-ink)] ${
           mono ? "font-mono" : ""
         }`}
       >
         {value}
-      </p>
+      </div>
     </div>
   );
 }

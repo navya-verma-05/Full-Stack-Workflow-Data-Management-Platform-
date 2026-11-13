@@ -39,7 +39,7 @@ export function formatShortDate(
 
 export function formatBucketLabel(
   bucket: string,
-  granularity: "day" | "hour",
+  granularity: "day" | "hour" = "day",
 ): string {
   if (granularity === "hour") {
     const parsed = new Date(bucket);
