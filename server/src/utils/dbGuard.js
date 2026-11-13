@@ -2,14 +2,14 @@
  * Data Safety Guard
  *
  * Prevents performance, load, benchmark, or destructive scripts and tests
- * from running against the primary operational database ('workflow_platform').
+ * from running against the primary operational database ('workflow_platform')
+ * or any non-isolated database.
+ *
+ * Hardened with a strict ALLOWLIST: only database names ending in '_perf' or '_test'
+ * are permitted.
  */
 
-export const PROTECTED_DATABASES = Object.freeze([
-  "workflow_platform",
-  "workflow_platform_prod",
-  "workflow_platform_production",
-]);
+export const ALLOWED_BENCHMARK_DB_PATTERN = /(_perf|_test)$/i;
 
 /**
  * Extracts the database name from a standard MongoDB connection string.
@@ -42,12 +42,12 @@ export function extractDatabaseName(uri) {
 }
 
 /**
- * Asserts that the target database is not a protected primary database.
- * Throws a descriptive error if the target database name is 'workflow_platform'.
+ * Asserts that the target database conforms to the strict benchmark allowlist.
+ * Only database names ending in '_perf' or '_test' are allowed.
  *
  * @param {string} uri - MongoDB connection URI
  * @param {string} [operationName='performance/load test']
- * @returns {string} database name if safe
+ * @returns {string} database name if allowed
  */
 export function assertSafeDatabase(
   uri,
@@ -55,11 +55,11 @@ export function assertSafeDatabase(
 ) {
   const dbName = extractDatabaseName(uri);
 
-  if (PROTECTED_DATABASES.includes(dbName.toLowerCase())) {
+  if (!ALLOWED_BENCHMARK_DB_PATTERN.test(dbName)) {
     throw new Error(
-      `[DATA SAFETY GUARD] BLOCKED: Refusing to run ${operationName} against primary database "${dbName}". ` +
-        `Performance, load, and rate-limit runs must use an isolated database such as "workflow_platform_perf" ` +
-        `or an in-memory database, and must clean up after themselves.`,
+      `[DATA SAFETY GUARD] BLOCKED: Refusing to run ${operationName} against database "${dbName}". ` +
+        `Performance, load, and rate-limit runs are strictly restricted to isolated databases ` +
+        `ending in "_perf" or "_test" (e.g. "workflow_platform_perf"), and must clean up after themselves.`,
     );
   }
 

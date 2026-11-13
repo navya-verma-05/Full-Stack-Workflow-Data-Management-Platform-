@@ -231,6 +231,7 @@ async function main() {
   console.log('Workflow Platform -- Live Ingestion Simulator');
   console.log(`Target API: ${API_BASE}`);
   console.log(`Interval:   ${INTERVAL_MS}ms per event`);
+  console.log('demo traffic; run seed --reset to clean up');
   console.log('Press Ctrl+C to terminate.');
   console.log('='.repeat(70));
 

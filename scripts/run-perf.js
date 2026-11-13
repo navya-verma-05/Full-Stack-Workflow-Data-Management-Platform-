@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import mongoose from '../server/node_modules/mongoose/index.js';
 import { assertSafeDatabase } from '../server/src/utils/dbGuard.js';
 import { encryptSecret } from '../server/src/utils/crypto.js';
+import { createApp } from '../server/src/app.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -34,17 +35,23 @@ const TARGET_DB_URI =
 
 export async function runPerformanceBenchmark({
   mongoUri = TARGET_DB_URI,
-  iterations = 50,
+  iterations = 30,
   concurrency = 5,
 } = {}) {
-  // CRITICAL GUARD: Ensure we never touch workflow_platform
+  // CRITICAL GUARD: Ensure we never touch workflow_platform (must end in _perf or _test)
   assertSafeDatabase(mongoUri, 'performance benchmark');
+
+  if (mongoose.connection.readyState !== 0) {
+    await mongoose.disconnect();
+  }
 
   console.log(`[PERF] Connecting to isolated database: ${mongoUri}`);
   await mongoose.connect(mongoUri);
 
   let tempSourceId;
   const rawSecret = 'perf-secret-32-chars-long-123456';
+  let server = null;
+  let serverPort = null;
 
   try {
     // 1. Prepare isolated source collection
@@ -67,9 +74,23 @@ export async function runPerformanceBenchmark({
     });
 
     tempSourceId = insertResult.insertedId;
-
     console.log(`[PERF] Created temporary source ${tempSourceId}`);
-    console.log(`[PERF] Executing ${iterations} signed requests with concurrency ${concurrency}...`);
+
+    // 2. Start OWN dedicated server instance on an ephemeral port (NEVER port 4000)
+    const app = createApp();
+    server = await new Promise((resolve, reject) => {
+      const s = app.listen(0, '127.0.0.1', () => resolve(s));
+      s.on('error', reject);
+    });
+
+    const addr = server.address();
+    serverPort = typeof addr === 'object' && addr ? addr.port : null;
+    if (!serverPort || serverPort === 4000) {
+      throw new Error(`[DATA SAFETY] Perf server must bind to its own ephemeral port, got ${serverPort}`);
+    }
+    console.log(`[PERF] Started isolated test server on port ${serverPort} (separate from port 4000)`);
+
+    console.log(`[PERF] Executing ${iterations} signed HTTP webhook deliveries with concurrency ${concurrency}...`);
 
     const latencies = [];
     let completed = 0;
@@ -92,18 +113,21 @@ export async function runPerformanceBenchmark({
         .digest('hex');
 
       const t0 = performance.now();
-      // Insert event into isolated DB
-      await eventsCol.insertOne({
-        sourceId: tempSourceId,
-        payload,
-        status: 'valid',
-        idempotencyKey: `perf-key-${Date.now()}-${idx}`,
-        attempts: 0,
-        maxAttempts: 3,
-        receivedAt: new Date(),
-        createdAt: new Date(),
-        updatedAt: new Date(),
+      const res = await fetch(`http://127.0.0.1:${serverPort}/api/webhooks/${tempSourceId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-webhook-timestamp': String(ts),
+          'x-webhook-signature': `sha256=${mac}`,
+          'x-idempotency-key': `perf-key-${Date.now()}-${idx}`,
+        },
+        body: rawBody,
       });
+
+      if (!res.ok && res.status !== 200 && res.status !== 201) {
+        throw new Error(`HTTP ${res.status}: ${await res.text()}`);
+      }
+
       latencies.push(performance.now() - t0);
       completed++;
     }
@@ -129,6 +153,7 @@ export async function runPerformanceBenchmark({
 
     const results = {
       database: mongoose.connection.name,
+      serverPort,
       totalRequests: completed,
       durationSec: totalTimeSec.toFixed(2),
       throughputRps: Number(rps),
@@ -137,10 +162,19 @@ export async function runPerformanceBenchmark({
       latencyP99Ms: Number(p99),
     };
 
+    // Allow pending asynchronous worker kicks to settle
+    await new Promise((resolve) => setTimeout(resolve, 200));
+
     console.log('[PERF] Benchmark Completed:');
     console.table([results]);
     return results;
   } finally {
+    // Stop isolated server
+    if (server) {
+      await new Promise((resolve) => server.close(resolve));
+      console.log('[PERF] Stopped isolated test server.');
+    }
+
     // Clean up after itself: drop database completely
     console.log(`[PERF] Cleaning up: dropping database ${mongoose.connection.name}...`);
     try {

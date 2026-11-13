@@ -12,6 +12,7 @@
     "dev": "node --watch src/server.js",
     "start": "node src/server.js",
     "seed": "node scripts/seed.js",
+    "simulate:live": "node ../scripts/simulate-live.js",
     "perf": "node ../scripts/run-perf.js",
     "test": "vitest run",
     "test:watch": "vitest",

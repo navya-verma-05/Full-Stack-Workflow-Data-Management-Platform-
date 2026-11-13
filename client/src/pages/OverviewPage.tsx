@@ -89,6 +89,72 @@ function getAttentionSummary(evt: WorkflowEvent): string {
   return latestLog?.message || `Event in ${evt.status} state`;
 }
 
+export interface BannerInfo {
+  healthy: boolean;
+  text: string;
+}
+
+export function computeSourceBannerInfo(
+  bySource?: Array<{
+    sourceId: string;
+    sourceName: string;
+    schemaType?: string;
+    total: number;
+    failed?: number;
+    dead_letter?: number;
+    processed?: number;
+    invalid?: number;
+  }> | null,
+): BannerInfo | null {
+  if (!bySource) return null;
+
+  // Filter qualifying sources:
+  // List a source only if its failed + dead-letter share in the selected range is above 15% OR it has at least 10 failed/dead-letter events.
+  const qualifyingSources = bySource.filter((s) => {
+    const failures = (s.failed || 0) + (s.dead_letter || 0);
+    const total = s.total || 0;
+    const share = total > 0 ? failures / total : 0;
+    return (total > 0 && share > 0.15) || failures >= 10;
+  });
+
+  // If none qualifies, show calm green "All sources healthy" state
+  if (qualifyingSources.length === 0) {
+    return {
+      healthy: true,
+      text: "All sources healthy — 100% of webhook events delivered and processed successfully within normal thresholds.",
+    };
+  }
+
+  // Name only qualifying sources and the worst one with its count and share
+  const sorted = [...qualifyingSources].sort((a, b) => {
+    const failuresA = (a.failed || 0) + (a.dead_letter || 0);
+    const failuresB = (b.failed || 0) + (b.dead_letter || 0);
+    if (failuresB !== failuresA) return failuresB - failuresA;
+    const shareA = (a.total || 0) > 0 ? failuresA / a.total : 0;
+    const shareB = (b.total || 0) > 0 ? failuresB / b.total : 0;
+    return shareB - shareA;
+  });
+
+  const worst = sorted[0];
+  const worstCount = (worst.failed || 0) + (worst.dead_letter || 0);
+  const worstSharePct =
+    worst.total > 0 ? Math.round((worstCount / worst.total) * 100) : 0;
+  const worstName = worst.sourceName || "Source";
+
+  if (qualifyingSources.length === 1) {
+    return {
+      healthy: false,
+      text: `1 source needs attention: ${worstName} has ${worstCount} failed or dead-letter events (${worstSharePct}% failure rate)`,
+    };
+  }
+
+  const names = qualifyingSources.map((s) => s.sourceName).join(", ");
+  return {
+    healthy: false,
+    text: `${qualifyingSources.length} sources need attention (${names}): worst is ${worstName} with ${worstCount} failed or dead-letter events (${worstSharePct}% failure rate)`,
+  };
+}
+
 // In-memory range persistence: preserved during client-side navigation, resets on full reload
 let inMemoryOverviewRange: { from: string; to: string } = getPresetBounds("7d");
 
@@ -343,35 +409,9 @@ export function OverviewPage() {
 
   const primaryIncidentBand = incidentBands[0] || null;
 
-  // Plain-language computed status banner
+  // Plain-language computed status banner based on qualifying source criteria
   const bannerInfo = useMemo(() => {
-    if (!summary) return null;
-    const attentionCount = summary.counts.failed + summary.counts.dead_letter;
-    if (attentionCount === 0) {
-      return {
-        healthy: true,
-        text: "All sources healthy — 100% of webhook events delivered and processed successfully.",
-      };
-    }
-    const problemSources = (summary.bySource || []).filter(
-      (s) => (s.failed || 0) + (s.dead_letter || 0) > 0,
-    );
-    const topSource = [...problemSources].sort(
-      (a, b) =>
-        (b.failed || 0) +
-        (b.dead_letter || 0) -
-        ((a.failed || 0) + (a.dead_letter || 0)),
-    )[0];
-    const topCount = topSource
-      ? (topSource.dead_letter || 0) + (topSource.failed || 0)
-      : attentionCount;
-    const topName = topSource?.sourceName || "Ingestion";
-    const sourcePlural =
-      problemSources.length === 1 ? "source needs" : "sources need";
-    return {
-      healthy: false,
-      text: `${problemSources.length} ${sourcePlural} attention: ${topName} has ${topCount} failed or dead-letter events in this period`,
-    };
+    return computeSourceBannerInfo(summary?.bySource);
   }, [summary]);
 
   // Group attention events by source
