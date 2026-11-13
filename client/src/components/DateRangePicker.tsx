@@ -22,10 +22,10 @@ export function getPresetBounds(preset: Exclude<PresetId, "all" | "custom">) {
   };
 }
 
-function detectActivePreset(
+export function detectActivePreset(
   from: string,
   to: string,
-  customOpen: boolean,
+  customOpen = false,
 ): PresetId {
   if (customOpen) return "custom";
   if (!from && !to) return "all";

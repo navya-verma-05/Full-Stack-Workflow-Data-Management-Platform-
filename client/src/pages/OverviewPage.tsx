@@ -25,6 +25,7 @@ import type { WorkflowEvent } from "../types/api";
 import { formatBucketLabel, formatDateTime } from "../utils/date";
 import {
   DateRangePicker,
+  detectActivePreset,
   getPresetBounds,
 } from "../components/DateRangePicker";
 import { HelpTooltip } from "../components/HelpTooltip";
@@ -88,19 +89,157 @@ function getAttentionSummary(evt: WorkflowEvent): string {
   return latestLog?.message || `Event in ${evt.status} state`;
 }
 
+// In-memory range persistence: preserved during client-side navigation, resets on full reload
+let inMemoryOverviewRange: { from: string; to: string } = getPresetBounds("7d");
+
+export function resetOverviewInMemoryRange(): void {
+  inMemoryOverviewRange = getPresetBounds("7d");
+}
+
+function formatIncidentDateRange(
+  startBucket: string,
+  endBucket: string,
+): string {
+  const d1 = new Date(`${startBucket}T00:00:00Z`);
+  const d2 = new Date(`${endBucket}T00:00:00Z`);
+  const day1 = d1.getUTCDate();
+  const day2 = d2.getUTCDate();
+  const month1 = d1.toLocaleDateString("en-GB", {
+    month: "short",
+    timeZone: "UTC",
+  });
+  const month2 = d2.toLocaleDateString("en-GB", {
+    month: "short",
+    timeZone: "UTC",
+  });
+
+  if (startBucket === endBucket) {
+    return `${day1} ${month1}`;
+  }
+  if (month1 === month2) {
+    return `${day1}-${day2} ${month1}`;
+  }
+  return `${day1} ${month1} - ${day2} ${month2}`;
+}
+
+export interface IncidentBand {
+  start: string;
+  end: string;
+  totalFailures: number;
+  label: string;
+}
+
+export function detectIncidentBands(
+  buckets: Array<{
+    bucket: string;
+    total: number;
+    failed?: number;
+    dead_letter?: number;
+  }>,
+  topSourceName = "Partner Orders",
+): IncidentBand[] {
+  if (!buckets || buckets.length < 2) return [];
+
+  const dailyShares = buckets.map((b) =>
+    b.total > 0 ? ((b.failed || 0) + (b.dead_letter || 0)) / b.total : 0,
+  );
+
+  const sortedShares = [...dailyShares].sort((a, b) => a - b);
+  const mid = Math.floor(sortedShares.length / 2);
+  const rawMedian =
+    sortedShares.length % 2 === 1
+      ? sortedShares[mid]
+      : (sortedShares[mid - 1] + sortedShares[mid]) / 2;
+
+  // In short ranges heavily impacted by an outage, cap median at 0.10 so the spike doesn't mask its own tail
+  const effectiveMedian = Math.min(rawMedian, 0.1);
+  const minThreshold = Math.max(2 * effectiveMedian, 0.15);
+
+  const incidentIndices: number[] = [];
+  for (let i = 0; i < buckets.length; i++) {
+    const s = dailyShares[i];
+    if (buckets[i].total > 0 && s >= minThreshold && s > 0.15) {
+      incidentIndices.push(i);
+    }
+  }
+
+  // Merge adjacent incident days into one band
+  const bands: number[][] = [];
+  let currentBand: number[] = [];
+  for (const idx of incidentIndices) {
+    if (currentBand.length === 0) {
+      currentBand.push(idx);
+    } else if (idx === currentBand[currentBand.length - 1] + 1) {
+      currentBand.push(idx);
+    } else {
+      bands.push(currentBand);
+      currentBand = [idx];
+    }
+  }
+  if (currentBand.length > 0) bands.push(currentBand);
+
+  // Drop bands of a single day with fewer than 5 events
+  const qualifiedBands = bands.filter((band) => {
+    if (band.length === 1) {
+      const b = buckets[band[0]];
+      const failures = (b.failed || 0) + (b.dead_letter || 0);
+      return b.total >= 5 && failures >= 5;
+    }
+    return true;
+  });
+
+  return qualifiedBands.map((band) => {
+    const start = buckets[band[0]].bucket;
+    const end = buckets[band[band.length - 1]].bucket;
+    const totalFailures = band.reduce(
+      (sum, i) =>
+        sum + (buckets[i].failed || 0) + (buckets[i].dead_letter || 0),
+      0,
+    );
+    const dateRangeStr = formatIncidentDateRange(start, end);
+    return {
+      start,
+      end,
+      totalFailures,
+      label: `Incident: ${dateRangeStr} (${topSourceName})`,
+    };
+  });
+}
+
 export function OverviewPage() {
   const { user } = useAuth();
   const { theme } = useTheme();
   const toast = useToast();
   const queryClient = useQueryClient();
 
-  // Default time range is last 7 days per requirements
-  const default7d = useMemo(() => getPresetBounds("7d"), []);
-  const [from, setFrom] = useState(default7d.from);
-  const [to, setTo] = useState(default7d.to);
+  // Opens on 7d by default; preserves user's last range choice in memory only
+  const [from, setFrom] = useState(inMemoryOverviewRange.from);
+  const [to, setTo] = useState(inMemoryOverviewRange.to);
   const [sourceId] = useState("");
   const [autoRefresh, setAutoRefresh] = useState(false);
   const [secondsAgo, setSecondsAgo] = useState(0);
+
+  const handleDateRangeChange = ({
+    from: nextFrom,
+    to: nextTo,
+  }: {
+    from: string;
+    to: string;
+  }) => {
+    inMemoryOverviewRange = { from: nextFrom, to: nextTo };
+    setFrom(nextFrom);
+    setTo(nextTo);
+  };
+
+  const activePreset = useMemo(() => detectActivePreset(from, to), [from, to]);
+
+  const comparisonCaption = useMemo(() => {
+    if (activePreset === "all") return null;
+    if (activePreset === "7d") return "vs previous 7 days";
+    if (activePreset === "24h") return "vs previous 24 hours";
+    if (activePreset === "30d") return "vs previous 30 days";
+    return "vs previous period";
+  }, [activePreset]);
 
   const [visibleSeries, setVisibleSeries] = useState<
     Record<ChartSeriesKey, boolean>
@@ -186,22 +325,23 @@ export function OverviewPage() {
   const gridStroke = isDark ? "#2B2A27" : "#E4E1DA";
   const axisColor = isDark ? "#8E8B82" : "#6B6B66";
 
-  // Compute incident annotation band: consecutive buckets where failure share > 20%
-  const incidentBounds = useMemo(() => {
-    if (!buckets || buckets.length < 2) return null;
-    const outageBuckets = buckets.filter((b) => {
-      const fails = (b.failed || 0) + (b.dead_letter || 0);
-      return b.total > 0 && fails / b.total >= 0.2;
-    });
-    if (outageBuckets.length > 0) {
-      return {
-        start: outageBuckets[0].bucket,
-        end: outageBuckets[outageBuckets.length - 1].bucket,
-        count: outageBuckets.length,
-      };
-    }
-    return null;
-  }, [buckets]);
+  const topFailureSource = useMemo(() => {
+    if (!summary?.bySource?.length) return "Partner Orders";
+    const sorted = [...summary.bySource].sort(
+      (a, b) =>
+        (b.failed || 0) +
+        (b.dead_letter || 0) -
+        ((a.failed || 0) + (a.dead_letter || 0)),
+    );
+    return sorted[0]?.sourceName || "Partner Orders";
+  }, [summary]);
+
+  // Compute incident annotation bands using the tightened rule
+  const incidentBands = useMemo(() => {
+    return detectIncidentBands(buckets, topFailureSource);
+  }, [buckets, topFailureSource]);
+
+  const primaryIncidentBand = incidentBands[0] || null;
 
   // Plain-language computed status banner
   const bannerInfo = useMemo(() => {
@@ -263,10 +403,7 @@ export function OverviewPage() {
           <DateRangePicker
             from={from}
             to={to}
-            onChange={({ from: f, to: t }) => {
-              setFrom(f);
-              setTo(t);
-            }}
+            onChange={handleDateRangeChange}
           />
 
           <div className="flex items-center gap-2 border-l border-[var(--border-hairline)] pl-3">
@@ -353,24 +490,30 @@ export function OverviewPage() {
                 <span className="font-mono text-2xl font-bold tracking-tight text-[#1B1B1A] dark:text-[#ECE9E2] tabular-nums">
                   {summary.total}
                 </span>
-                {typeof summary.deltas?.totalPct === "number" && (
-                  <span
-                    className={`inline-flex items-center font-mono text-xs font-medium ${
-                      summary.deltas.totalPct >= 0
-                        ? "text-[#2E7D32] dark:text-[#4ADE80]"
-                        : "text-[#C2410C] dark:text-[#FB923C]"
-                    }`}
-                  >
-                    {summary.deltas.totalPct >= 0 ? "+" : ""}
-                    {summary.deltas.totalPct}%
-                  </span>
-                )}
+                {comparisonCaption &&
+                  typeof summary.deltas?.totalPct === "number" && (
+                    <span
+                      className={`inline-flex items-center font-mono text-xs font-medium ${
+                        summary.deltas.totalPct >= 0
+                          ? "text-[#2E7D32] dark:text-[#4ADE80]"
+                          : "text-[#C2410C] dark:text-[#FB923C]"
+                      }`}
+                    >
+                      {summary.deltas.totalPct >= 0 ? "+" : ""}
+                      {summary.deltas.totalPct}%
+                    </span>
+                  )}
               </div>
               <p className="mt-1 text-[11px] text-[#6B6B66] dark:text-[#8E8B82]">
-                Total incoming webhook deliveries{" "}
-                <span className="font-mono text-[10px]">
-                  ({summary.deltas?.comparisonLabel || "vs prior 7d"})
-                </span>
+                Total incoming webhook deliveries
+                {comparisonCaption && (
+                  <>
+                    {" "}
+                    <span className="font-mono text-[10px]">
+                      ({comparisonCaption})
+                    </span>
+                  </>
+                )}
               </p>
             </div>
 
@@ -389,24 +532,30 @@ export function OverviewPage() {
                 <span className="font-mono text-2xl font-bold tracking-tight text-[#2E7D32] dark:text-[#4ADE80] tabular-nums">
                   {summary.successRate}%
                 </span>
-                {typeof summary.deltas?.successRatePts === "number" && (
-                  <span
-                    className={`inline-flex items-center font-mono text-xs font-medium ${
-                      summary.deltas.successRatePts >= 0
-                        ? "text-[#2E7D32] dark:text-[#4ADE80]"
-                        : "text-[#B91C1C] dark:text-[#F87171]"
-                    }`}
-                  >
-                    {summary.deltas.successRatePts >= 0 ? "+" : ""}
-                    {summary.deltas.successRatePts} pts
-                  </span>
-                )}
+                {comparisonCaption &&
+                  typeof summary.deltas?.successRatePts === "number" && (
+                    <span
+                      className={`inline-flex items-center font-mono text-xs font-medium ${
+                        summary.deltas.successRatePts >= 0
+                          ? "text-[#2E7D32] dark:text-[#4ADE80]"
+                          : "text-[#B91C1C] dark:text-[#F87171]"
+                      }`}
+                    >
+                      {summary.deltas.successRatePts >= 0 ? "+" : ""}
+                      {summary.deltas.successRatePts} pts
+                    </span>
+                  )}
               </div>
               <p className="mt-1 text-[11px] text-[#6B6B66] dark:text-[#8E8B82]">
-                Successfully verified and stored{" "}
-                <span className="font-mono text-[10px]">
-                  ({summary.deltas?.comparisonLabel || "vs prior 7d"})
-                </span>
+                Successfully verified and stored
+                {comparisonCaption && (
+                  <>
+                    {" "}
+                    <span className="font-mono text-[10px]">
+                      ({comparisonCaption})
+                    </span>
+                  </>
+                )}
               </p>
             </div>
 
@@ -431,25 +580,31 @@ export function OverviewPage() {
                 >
                   {summary.counts.failed + summary.counts.dead_letter}
                 </span>
-                {typeof summary.deltas?.attentionPct === "number" && (
-                  <span
-                    className={`inline-flex items-center font-mono text-xs font-medium ${
-                      summary.deltas.attentionPct <= 0
-                        ? "text-[#2E7D32] dark:text-[#4ADE80]"
-                        : "text-[#B91C1C] dark:text-[#F87171]"
-                    }`}
-                  >
-                    {summary.deltas.attentionPct >= 0 ? "+" : ""}
-                    {summary.deltas.attentionPct}%
-                  </span>
-                )}
+                {comparisonCaption &&
+                  typeof summary.deltas?.attentionPct === "number" && (
+                    <span
+                      className={`inline-flex items-center font-mono text-xs font-medium ${
+                        summary.deltas.attentionPct <= 0
+                          ? "text-[#2E7D32] dark:text-[#4ADE80]"
+                          : "text-[#B91C1C] dark:text-[#F87171]"
+                      }`}
+                    >
+                      {summary.deltas.attentionPct >= 0 ? "+" : ""}
+                      {summary.deltas.attentionPct}%
+                    </span>
+                  )}
               </div>
               <p className="mt-1 text-[11px] text-[#6B6B66] dark:text-[#8E8B82]">
                 {summary.counts.failed} failed retrying,{" "}
-                {summary.counts.dead_letter} dead-letter{" "}
-                <span className="font-mono text-[10px]">
-                  ({summary.deltas?.comparisonLabel || "vs prior 7d"})
-                </span>
+                {summary.counts.dead_letter} dead-letter
+                {comparisonCaption && (
+                  <>
+                    {" "}
+                    <span className="font-mono text-[10px]">
+                      ({comparisonCaption})
+                    </span>
+                  </>
+                )}
               </p>
             </div>
 
@@ -468,28 +623,30 @@ export function OverviewPage() {
                 <span className="font-mono text-2xl font-bold tracking-tight text-[#1B1B1A] dark:text-[#ECE9E2] tabular-nums">
                   {summary.avgProcessingMs} ms
                 </span>
-                {typeof summary.deltas?.avgProcessingMsPct === "number" && (
-                  <span
-                    className={`inline-flex items-center font-mono text-xs font-medium ${
-                      summary.deltas.avgProcessingMsPct <= 0
-                        ? "text-[#2E7D32] dark:text-[#4ADE80]"
-                        : "text-[#C2410C] dark:text-[#FB923C]"
-                    }`}
-                  >
-                    {summary.deltas.avgProcessingMsPct >= 0 ? "+" : ""}
-                    {summary.deltas.avgProcessingMsPct}%
-                  </span>
-                )}
+                {comparisonCaption &&
+                  typeof summary.deltas?.avgProcessingMsPct === "number" && (
+                    <span
+                      className={`inline-flex items-center font-mono text-xs font-medium ${
+                        summary.deltas.avgProcessingMsPct <= 0
+                          ? "text-[#2E7D32] dark:text-[#4ADE80]"
+                          : "text-[#C2410C] dark:text-[#FB923C]"
+                      }`}
+                    >
+                      {summary.deltas.avgProcessingMsPct >= 0 ? "+" : ""}
+                      {summary.deltas.avgProcessingMsPct}%
+                    </span>
+                  )}
               </div>
               <p className="mt-1 text-[11px] text-[#6B6B66] dark:text-[#8E8B82]">
-                End-to-end ingest to record{" "}
-                <span className="font-mono text-[10px]">
-                  (
-                  {summary.deltas?.comparisonLabel === "vs prior 7d"
-                    ? "vs previous 7 days"
-                    : summary.deltas?.comparisonLabel || "vs previous period"}
-                  )
-                </span>
+                End-to-end ingest to record
+                {comparisonCaption && (
+                  <>
+                    {" "}
+                    <span className="font-mono text-[10px]">
+                      ({comparisonCaption})
+                    </span>
+                  </>
+                )}
               </p>
             </div>
           </div>
@@ -502,10 +659,9 @@ export function OverviewPage() {
                   <h2 className="text-xs font-bold uppercase tracking-wider text-[#1B1B1A] dark:text-[#ECE9E2]">
                     Ingestion Throughput & Outcomes
                   </h2>
-                  {incidentBounds && (
+                  {primaryIncidentBand && (
                     <span className="rounded border border-[#FDBA74] bg-[#FFF7ED] px-1.5 py-0.5 font-mono text-[10px] font-medium text-[#C2410C] dark:border-[#52230B] dark:bg-[#2A150A] dark:text-[#FB923C]">
-                      Incident detected ({incidentBounds.start} to{" "}
-                      {incidentBounds.end})
+                      {primaryIncidentBand.label}
                     </span>
                   )}
                 </div>
@@ -616,16 +772,17 @@ export function OverviewPage() {
                         );
                       }}
                     />
-                    {incidentBounds && (
+                    {incidentBands.map((band) => (
                       <ReferenceArea
-                        x1={incidentBounds.start}
-                        x2={incidentBounds.end}
+                        key={`${band.start}-${band.end}`}
+                        x1={band.start}
+                        x2={band.end}
                         stroke="#C2410C"
                         strokeOpacity={0.4}
                         fill="#C2410C"
                         fillOpacity={0.06}
                       />
-                    )}
+                    ))}
                     {visibleSeries.processed && (
                       <Bar
                         dataKey="processed"

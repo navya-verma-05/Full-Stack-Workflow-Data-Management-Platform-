@@ -8,6 +8,7 @@ import { AuthProvider } from "../context/AuthContext";
 import { ThemeProvider } from "../context/ThemeContext";
 import { ToastProvider } from "../context/ToastContext";
 import { getAccessToken, setAccessToken } from "../api/http";
+import { resetOverviewInMemoryRange } from "../pages/OverviewPage";
 import type { Source, User, WorkflowEvent } from "../types/api";
 
 const ADMIN_USER: User = {
@@ -189,6 +190,7 @@ function renderAppAt(initialEntries: string[] = ["/"]) {
 
 describe("Workflow Platform Frontend", () => {
   beforeEach(() => {
+    resetOverviewInMemoryRange();
     setAccessToken(null);
     window.localStorage.clear();
     window.sessionStorage.clear();
@@ -335,7 +337,7 @@ describe("Workflow Platform Frontend", () => {
     expect(await screen.findByText("259")).toBeInTheDocument();
     expect(screen.getByText("73.7%")).toBeInTheDocument();
     expect(screen.getByText(/245\s*ms/i)).toBeInTheDocument();
-    expect(screen.getAllByText(/vs prior 7d/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/vs previous 7 days/i).length).toBe(4);
     expect(screen.getByText(/Last event received/i)).toBeInTheDocument();
   });
 
@@ -703,5 +705,199 @@ describe("Workflow Platform Frontend", () => {
     await user.click(lightBtn);
     expect(window.localStorage.getItem("workflow_theme")).toBe("light");
     expect(document.documentElement.classList.contains("dark")).toBe(false);
+  });
+
+  it("hides KPI deltas completely when All time is selected and updates comparison captions on preset switch", async () => {
+    const user = userEvent.setup();
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = typeof input === "string" ? input : input.toString();
+
+      if (url === "/api/auth/refresh") {
+        return jsonResponse({
+          user: ADMIN_USER,
+          accessToken: "mem.jwt.token.admin",
+        });
+      }
+      if (url.startsWith("/api/metrics/summary")) {
+        return jsonResponse(SAMPLE_SUMMARY);
+      }
+      if (url.includes("/api/metrics/time")) {
+        return jsonResponse({ granularity: "day", buckets: [] });
+      }
+      if (url.startsWith("/api/sources")) {
+        return jsonResponse({
+          items: SAMPLE_SOURCES,
+          pagination: { page: 1, limit: 100, total: 2, totalPages: 1 },
+        });
+      }
+      if (url.startsWith("/api/events")) {
+        return jsonResponse({
+          items: [],
+          pagination: { page: 1, limit: 6, total: 0, totalPages: 0 },
+        });
+      }
+      return jsonResponse({ error: { message: `Unhandled ${url}` } }, 404);
+    });
+
+    vi.stubGlobal("fetch", fetchMock);
+    renderAppAt(["/"]);
+
+    // Default is 7d with "vs previous 7 days"
+    expect(
+      await screen.findByRole("heading", { name: /Operational Overview/i }),
+    ).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getAllByText(/vs previous 7 days/i).length).toBe(4);
+    });
+
+    // Switch to "All time"
+    const allTimeBtn = screen.getByRole("button", { name: /All time/i });
+    await user.click(allTimeBtn);
+
+    // In All time, deltas are hidden completely
+    await waitFor(() => {
+      expect(screen.queryByText(/vs previous 7 days/i)).toBeNull();
+      expect(screen.queryByText(/vs previous period/i)).toBeNull();
+      expect(screen.queryByText(/\+12\.5%/i)).toBeNull();
+    });
+
+    // Switch to 24h
+    const btn24h = screen.getByRole("button", { name: /^24h$/i });
+    await user.click(btn24h);
+    await waitFor(() => {
+      expect(screen.getAllByText(/vs previous 24 hours/i).length).toBe(4);
+    });
+
+    // Switch to 30d
+    const btn30d = screen.getByRole("button", { name: /^30d$/i });
+    await user.click(btn30d);
+    await waitFor(() => {
+      expect(screen.getAllByText(/vs previous 30 days/i).length).toBe(4);
+    });
+  });
+
+  it("detects tightened incident band 7-9 Nov naming Partner Orders and renders incident badge", async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = typeof input === "string" ? input : input.toString();
+
+      if (url === "/api/auth/refresh") {
+        return jsonResponse({
+          user: ADMIN_USER,
+          accessToken: "mem.jwt.token.admin",
+        });
+      }
+      if (url.startsWith("/api/metrics/summary")) {
+        return jsonResponse({
+          ...SAMPLE_SUMMARY,
+          bySource: [
+            {
+              sourceId: "src-partner",
+              sourceName: "Partner Orders",
+              schemaType: "partner",
+              active: true,
+              total: 100,
+              processed: 70,
+              invalid: 2,
+              failed: 20,
+              dead_letter: 8,
+            },
+          ],
+        });
+      }
+      if (url.includes("/api/metrics/time")) {
+        return jsonResponse({
+          granularity: "day",
+          buckets: [
+            {
+              bucket: "2026-11-06",
+              total: 18,
+              processed: 17,
+              invalid: 0,
+              failed: 1,
+              dead_letter: 0,
+            },
+            {
+              bucket: "2026-11-07",
+              total: 20,
+              processed: 6,
+              invalid: 0,
+              failed: 8,
+              dead_letter: 6,
+            },
+            {
+              bucket: "2026-11-08",
+              total: 21,
+              processed: 10,
+              invalid: 0,
+              failed: 6,
+              dead_letter: 5,
+            },
+            {
+              bucket: "2026-11-09",
+              total: 24,
+              processed: 19,
+              invalid: 0,
+              failed: 2,
+              dead_letter: 3,
+            },
+            {
+              bucket: "2026-11-10",
+              total: 18,
+              processed: 18,
+              invalid: 0,
+              failed: 0,
+              dead_letter: 0,
+            },
+            {
+              bucket: "2026-11-11",
+              total: 12,
+              processed: 12,
+              invalid: 0,
+              failed: 0,
+              dead_letter: 0,
+            },
+            {
+              bucket: "2026-11-12",
+              total: 11,
+              processed: 10,
+              invalid: 0,
+              failed: 1,
+              dead_letter: 0,
+            },
+            {
+              bucket: "2026-11-13",
+              total: 10,
+              processed: 8,
+              invalid: 0,
+              failed: 1,
+              dead_letter: 1,
+            },
+          ],
+        });
+      }
+      if (url.startsWith("/api/sources")) {
+        return jsonResponse({
+          items: SAMPLE_SOURCES,
+          pagination: { page: 1, limit: 100, total: 2, totalPages: 1 },
+        });
+      }
+      if (url.startsWith("/api/events")) {
+        return jsonResponse({
+          items: [],
+          pagination: { page: 1, limit: 6, total: 0, totalPages: 0 },
+        });
+      }
+      return jsonResponse({ error: { message: `Unhandled ${url}` } }, 404);
+    });
+
+    vi.stubGlobal("fetch", fetchMock);
+    renderAppAt(["/"]);
+
+    expect(
+      await screen.findByRole("heading", { name: /Operational Overview/i }),
+    ).toBeInTheDocument();
+    expect(
+      await screen.findByText(/Incident: 7-9 Nov \(Partner Orders\)/i),
+    ).toBeInTheDocument();
   });
 });

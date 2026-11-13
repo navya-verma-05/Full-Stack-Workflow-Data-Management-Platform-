@@ -15,6 +15,7 @@
     "seed": "npm --prefix server run seed",
     "simulate": "node scripts/simulate-webhooks.js",
     "simulate:live": "node scripts/simulate-live.js",
+    "perf": "node scripts/run-perf.js",
     "test:server": "npm --prefix server test",
     "test:client": "npm --prefix client test",
     "test": "npm --prefix server test && npm --prefix client test",
