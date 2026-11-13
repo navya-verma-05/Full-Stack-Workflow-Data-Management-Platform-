@@ -1,7 +1,7 @@
-import { Navigate, Outlet } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import type { UserRole } from '../types/api';
-import { LoadingState } from './StateFeedback';
+import { Navigate, Outlet } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import type { UserRole } from "../types/api";
+import { LoadingState } from "./StateFeedback";
 
 export function ProtectedRoute() {
   const { user, isInitializing } = useAuth();
@@ -37,8 +37,11 @@ export function RoleRoute({ allowedRoles }: { allowedRoles: UserRole[] }) {
           Access Restricted
         </h2>
         <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
-          Your role (<span className="font-medium text-slate-900 dark:text-slate-200">{user.role}</span>)
-          does not have permission to view this page.
+          Your role (
+          <span className="font-medium text-slate-900 dark:text-slate-200">
+            {user.role}
+          </span>
+          ) does not have permission to view this page.
         </p>
       </div>
     );

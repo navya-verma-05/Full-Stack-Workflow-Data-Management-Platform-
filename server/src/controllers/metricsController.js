@@ -1,4 +1,7 @@
-import { getMetricsSummary, getMetricsTimeSeries } from '../services/metricsService.js';
+import {
+  getMetricsSummary,
+  getMetricsTimeSeries,
+} from "../services/metricsService.js";
 
 export async function summary(req, res, next) {
   try {
@@ -17,4 +20,3 @@ export async function timeSeries(req, res, next) {
     return next(err);
   }
 }
-

@@ -1,4 +1,4 @@
-import { ingestWebhook, replayEvent } from '../services/webhookService.js';
+import { ingestWebhook, replayEvent } from "../services/webhookService.js";
 
 export async function receive(req, res, next) {
   try {
@@ -14,15 +14,15 @@ export async function receive(req, res, next) {
         duplicate: true,
         eventId: result.event._id,
         status: result.event.status,
-        message: 'Duplicate event acknowledged idempotently',
+        message: "Duplicate event acknowledged idempotently",
       });
     }
 
     if (result.invalid) {
       return res.status(422).json({
         error: {
-          code: 'INVALID_WEBHOOK_PAYLOAD',
-          message: 'Webhook payload failed schema validation',
+          code: "INVALID_WEBHOOK_PAYLOAD",
+          message: "Webhook payload failed schema validation",
           details: result.event.errors,
         },
         eventId: result.event._id,
@@ -51,4 +51,3 @@ export async function replay(req, res, next) {
     return next(err);
   }
 }
-

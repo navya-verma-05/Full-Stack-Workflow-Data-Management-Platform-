@@ -1,13 +1,13 @@
-import mongoose from 'mongoose';
-import { Event } from '../models/Event.js';
-import { RecordModel } from '../models/Record.js';
-import { AuditLog } from '../models/AuditLog.js';
-import { AppError } from '../utils/AppError.js';
+import mongoose from "mongoose";
+import { Event } from "../models/Event.js";
+import { RecordModel } from "../models/Record.js";
+import { AuditLog } from "../models/AuditLog.js";
+import { AppError } from "../utils/AppError.js";
 import {
   buildPaginationMeta,
   escapeRegex,
   parseDateRange,
-} from '../utils/queryHelpers.js';
+} from "../utils/queryHelpers.js";
 
 export async function listEvents({
   page = 1,
@@ -21,7 +21,7 @@ export async function listEvents({
   const match = {};
   if (status) {
     const statuses = String(status)
-      .split(',')
+      .split(",")
       .map((s) => s.trim())
       .filter(Boolean);
     match.status = statuses.length > 1 ? { $in: statuses } : statuses[0];
@@ -31,17 +31,17 @@ export async function listEvents({
   if (dateRange) match.receivedAt = dateRange;
 
   if (search) {
-    const safeRegex = new RegExp(escapeRegex(search), 'i');
+    const safeRegex = new RegExp(escapeRegex(search), "i");
     match.$or = [
       { idempotencyKey: safeRegex },
-      { 'errors.message': safeRegex },
-      { 'payload.clientName': safeRegex },
-      { 'payload.fullName': safeRegex },
-      { 'payload.name': safeRegex },
-      { 'payload.email': safeRegex },
-      { 'payload.clientEmail': safeRegex },
-      { 'payload.customer.name': safeRegex },
-      { 'payload.customer.email': safeRegex },
+      { "errors.message": safeRegex },
+      { "payload.clientName": safeRegex },
+      { "payload.fullName": safeRegex },
+      { "payload.name": safeRegex },
+      { "payload.email": safeRegex },
+      { "payload.clientEmail": safeRegex },
+      { "payload.customer.name": safeRegex },
+      { "payload.customer.email": safeRegex },
     ];
   }
 
@@ -57,9 +57,9 @@ export async function listEvents({
           { $limit: limit },
           {
             $lookup: {
-              from: 'sources',
-              localField: 'sourceId',
-              foreignField: '_id',
+              from: "sources",
+              localField: "sourceId",
+              foreignField: "_id",
               pipeline: [
                 {
                   $project: {
@@ -69,12 +69,12 @@ export async function listEvents({
                   },
                 },
               ],
-              as: 'source',
+              as: "source",
             },
           },
           {
             $unwind: {
-              path: '$source',
+              path: "$source",
               preserveNullAndEmptyArrays: true,
             },
           },
@@ -85,7 +85,7 @@ export async function listEvents({
             },
           },
         ],
-        totalCount: [{ $count: 'count' }],
+        totalCount: [{ $count: "count" }],
       },
     },
   ]);
@@ -102,16 +102,16 @@ export async function listEvents({
 export async function getEventDetail(id) {
   const event = await Event.findById(id)
     .populate({
-      path: 'sourceId',
-      select: 'name schemaType active',
+      path: "sourceId",
+      select: "name schemaType active",
     })
     .populate({
-      path: 'recordId',
-      select: '-__v',
+      path: "recordId",
+      select: "-__v",
     });
 
   if (!event) {
-    throw new AppError('Event not found', 404, 'EVENT_NOT_FOUND');
+    throw new AppError("Event not found", 404, "EVENT_NOT_FOUND");
   }
 
   return event.toJSON();
@@ -133,7 +133,7 @@ export async function listRecords({
   if (dateRange) match.normalizedAt = dateRange;
 
   if (search) {
-    const safeRegex = new RegExp(escapeRegex(search), 'i');
+    const safeRegex = new RegExp(escapeRegex(search), "i");
     match.$or = [
       { clientName: safeRegex },
       { clientEmail: safeRegex },
@@ -154,9 +154,9 @@ export async function listRecords({
           { $limit: limit },
           {
             $lookup: {
-              from: 'sources',
-              localField: 'sourceId',
-              foreignField: '_id',
+              from: "sources",
+              localField: "sourceId",
+              foreignField: "_id",
               pipeline: [
                 {
                   $project: {
@@ -166,12 +166,12 @@ export async function listRecords({
                   },
                 },
               ],
-              as: 'source',
+              as: "source",
             },
           },
           {
             $unwind: {
-              path: '$source',
+              path: "$source",
               preserveNullAndEmptyArrays: true,
             },
           },
@@ -181,7 +181,7 @@ export async function listRecords({
             },
           },
         ],
-        totalCount: [{ $count: 'count' }],
+        totalCount: [{ $count: "count" }],
       },
     },
   ]);
@@ -213,7 +213,7 @@ export async function listAuditLogs({
   if (dateRange) filter.createdAt = dateRange;
 
   if (search) {
-    const safeRegex = new RegExp(escapeRegex(search), 'i');
+    const safeRegex = new RegExp(escapeRegex(search), "i");
     filter.$or = [
       { actorEmail: safeRegex },
       { action: safeRegex },
@@ -224,7 +224,10 @@ export async function listAuditLogs({
 
   const skip = (page - 1) * limit;
   const [items, total] = await Promise.all([
-    AuditLog.find(filter).sort({ createdAt: -1, _id: -1 }).skip(skip).limit(limit),
+    AuditLog.find(filter)
+      .sort({ createdAt: -1, _id: -1 })
+      .skip(skip)
+      .limit(limit),
     AuditLog.countDocuments(filter),
   ]);
 
@@ -233,4 +236,3 @@ export async function listAuditLogs({
     pagination: buildPaginationMeta(page, limit, total),
   };
 }
-

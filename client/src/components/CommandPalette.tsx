@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import {
   Activity,
   BarChart3,
@@ -13,12 +13,12 @@ import {
   Users,
   Webhook,
   X,
-} from 'lucide-react';
-import { api } from '../api/endpoints';
-import { useAuth } from '../context/AuthContext';
-import { useTheme } from '../context/ThemeContext';
-import { StatusBadge } from './StatusBadge';
-import { RelativeTime } from './RelativeTime';
+} from "lucide-react";
+import { api } from "../api/endpoints";
+import { useAuth } from "../context/AuthContext";
+import { useTheme } from "../context/ThemeContext";
+import { StatusBadge } from "./StatusBadge";
+import { RelativeTime } from "./RelativeTime";
 
 interface CommandPaletteProps {
   open: boolean;
@@ -27,7 +27,7 @@ interface CommandPaletteProps {
 
 interface PaletteEntry {
   id: string;
-  section: 'Pages' | 'Events' | 'Preferences';
+  section: "Pages" | "Events" | "Preferences";
   label: string;
   hint?: string;
   onSelect: () => void;
@@ -39,14 +39,14 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
   const navigate = useNavigate();
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const [query, setQuery] = useState('');
-  const [debounced, setDebounced] = useState('');
+  const [query, setQuery] = useState("");
+  const [debounced, setDebounced] = useState("");
   const [activeIndex, setActiveIndex] = useState(0);
 
   useEffect(() => {
     if (!open) {
-      setQuery('');
-      setDebounced('');
+      setQuery("");
+      setDebounced("");
       setActiveIndex(0);
       return;
     }
@@ -63,22 +63,58 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
   }, [query]);
 
   const eventsQuery = useQuery({
-    queryKey: ['command-palette-events', debounced],
+    queryKey: ["command-palette-events", debounced],
     queryFn: () => api.getEvents({ search: debounced, limit: 6 }),
     enabled: open && debounced.length >= 2,
   });
 
   const navItems = useMemo(() => {
     const base = [
-      { id: 'nav-overview', label: 'Overview', hint: 'Operational KPIs & chart', to: '/', icon: BarChart3 },
-      { id: 'nav-events', label: 'Events', hint: 'Webhook ingestion stream', to: '/events', icon: Activity },
-      { id: 'nav-records', label: 'Records', hint: 'Normalized client records', to: '/records', icon: FileCheck2 },
-      { id: 'nav-sources', label: 'Sources', hint: 'Webhook endpoints & secrets', to: '/sources', icon: Webhook },
+      {
+        id: "nav-overview",
+        label: "Overview",
+        hint: "Operational KPIs & chart",
+        to: "/",
+        icon: BarChart3,
+      },
+      {
+        id: "nav-events",
+        label: "Events",
+        hint: "Webhook ingestion stream",
+        to: "/events",
+        icon: Activity,
+      },
+      {
+        id: "nav-records",
+        label: "Records",
+        hint: "Normalized client records",
+        to: "/records",
+        icon: FileCheck2,
+      },
+      {
+        id: "nav-sources",
+        label: "Sources",
+        hint: "Webhook endpoints & secrets",
+        to: "/sources",
+        icon: Webhook,
+      },
     ];
-    if (user?.role === 'admin') {
+    if (user?.role === "admin") {
       base.push(
-        { id: 'nav-users', label: 'Users', hint: 'Admin: team & roles', to: '/users', icon: Users },
-        { id: 'nav-audit', label: 'Audit Log', hint: 'Admin: security audit trail', to: '/audit-logs', icon: ShieldCheck }
+        {
+          id: "nav-users",
+          label: "Users",
+          hint: "Admin: team & roles",
+          to: "/users",
+          icon: Users,
+        },
+        {
+          id: "nav-audit",
+          label: "Audit Log",
+          hint: "Admin: security audit trail",
+          to: "/audit-logs",
+          icon: ShieldCheck,
+        },
       );
     }
     return base;
@@ -87,10 +123,15 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
   const entries = useMemo<PaletteEntry[]>(() => {
     const lower = query.trim().toLowerCase();
     const pageEntries: PaletteEntry[] = navItems
-      .filter((item) => !lower || item.label.toLowerCase().includes(lower) || item.hint.toLowerCase().includes(lower))
+      .filter(
+        (item) =>
+          !lower ||
+          item.label.toLowerCase().includes(lower) ||
+          item.hint.toLowerCase().includes(lower),
+      )
       .map((item) => ({
         id: item.id,
-        section: 'Pages',
+        section: "Pages",
         label: item.label,
         hint: item.hint,
         onSelect: () => {
@@ -99,31 +140,34 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
         },
       }));
 
-    const eventEntries: PaletteEntry[] = (eventsQuery.data?.items || []).map((ev) => {
-      const client =
-        String(
-          ev.payload.fullName ||
-            ev.payload.name ||
-            (ev.payload.customer as { name?: string } | undefined)?.name ||
-            ''
-        ) || 'Webhook payload';
-      return {
-        id: `evt-${ev._id}`,
-        section: 'Events',
-        label: ev.idempotencyKey,
-        hint: client,
-        onSelect: () => {
-          navigate(`/events/${ev._id}`);
-          onClose();
-        },
-      };
-    });
+    const eventEntries: PaletteEntry[] = (eventsQuery.data?.items || []).map(
+      (ev) => {
+        const client =
+          String(
+            ev.payload.fullName ||
+              ev.payload.name ||
+              (ev.payload.customer as { name?: string } | undefined)?.name ||
+              "",
+          ) || "Webhook payload";
+        return {
+          id: `evt-${ev._id}`,
+          section: "Events",
+          label: ev.idempotencyKey,
+          hint: client,
+          onSelect: () => {
+            navigate(`/events/${ev._id}`);
+            onClose();
+          },
+        };
+      },
+    );
 
     const themeEntry: PaletteEntry = {
-      id: 'pref-theme',
-      section: 'Preferences',
-      label: theme === 'dark' ? 'Switch to Light theme' : 'Switch to Dark theme',
-      hint: 'Saved locally',
+      id: "pref-theme",
+      section: "Preferences",
+      label:
+        theme === "dark" ? "Switch to Light theme" : "Switch to Dark theme",
+      hint: "Saved locally",
       onSelect: () => {
         toggleTheme();
         onClose();
@@ -131,12 +175,22 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
     };
 
     const prefEntries =
-      !lower || themeEntry.label.toLowerCase().includes(lower) || 'theme dark light'.includes(lower)
+      !lower ||
+      themeEntry.label.toLowerCase().includes(lower) ||
+      "theme dark light".includes(lower)
         ? [themeEntry]
         : [];
 
     return [...pageEntries, ...eventEntries, ...prefEntries];
-  }, [eventsQuery.data?.items, navItems, navigate, onClose, query, theme, toggleTheme]);
+  }, [
+    eventsQuery.data?.items,
+    navItems,
+    navigate,
+    onClose,
+    query,
+    theme,
+    toggleTheme,
+  ]);
 
   useEffect(() => {
     setActiveIndex(0);
@@ -144,19 +198,25 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
 
   if (!open) return null;
 
-  const eventMap = new Map((eventsQuery.data?.items || []).map((ev) => [`evt-${ev._id}`, ev]));
+  const eventMap = new Map(
+    (eventsQuery.data?.items || []).map((ev) => [`evt-${ev._id}`, ev]),
+  );
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Escape') {
+    if (e.key === "Escape") {
       e.preventDefault();
       onClose();
-    } else if (e.key === 'ArrowDown') {
+    } else if (e.key === "ArrowDown") {
       e.preventDefault();
-      setActiveIndex((prev) => (entries.length ? (prev + 1) % entries.length : 0));
-    } else if (e.key === 'ArrowUp') {
+      setActiveIndex((prev) =>
+        entries.length ? (prev + 1) % entries.length : 0,
+      );
+    } else if (e.key === "ArrowUp") {
       e.preventDefault();
-      setActiveIndex((prev) => (entries.length ? (prev - 1 + entries.length) % entries.length : 0));
-    } else if (e.key === 'Enter' && entries[activeIndex]) {
+      setActiveIndex((prev) =>
+        entries.length ? (prev - 1 + entries.length) % entries.length : 0,
+      );
+    } else if (e.key === "Enter" && entries[activeIndex]) {
       e.preventDefault();
       entries[activeIndex].onSelect();
     }
@@ -215,8 +275,8 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
                 const navMeta = navItems.find((n) => n.id === entry.id);
                 const Icon =
                   navMeta?.icon ||
-                  (entry.id === 'pref-theme'
-                    ? theme === 'dark'
+                  (entry.id === "pref-theme"
+                    ? theme === "dark"
                       ? Sun
                       : Moon
                     : Activity);
@@ -229,14 +289,16 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
                       onClick={entry.onSelect}
                       className={`flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-left transition-colors ${
                         isSelected
-                          ? 'bg-indigo-50 text-indigo-900 dark:bg-indigo-600/20 dark:text-white'
-                          : 'text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800/70'
+                          ? "bg-indigo-50 text-indigo-900 dark:bg-indigo-600/20 dark:text-white"
+                          : "text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800/70"
                       }`}
                     >
                       <div className="flex min-w-0 items-center gap-3">
                         <Icon className="h-4 w-4 shrink-0 text-slate-400" />
                         <div className="min-w-0">
-                          <p className="truncate text-xs font-medium">{entry.label}</p>
+                          <p className="truncate text-xs font-medium">
+                            {entry.label}
+                          </p>
                           {entry.hint && (
                             <p className="truncate text-[11px] text-slate-500 dark:text-slate-400">
                               {entry.hint}
@@ -278,4 +340,3 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
     </div>
   );
 }
-

@@ -1,6 +1,6 @@
-import '@testing-library/jest-dom/vitest';
-import { cleanup } from '@testing-library/react';
-import { afterEach } from 'vitest';
+import "@testing-library/jest-dom/vitest";
+import { cleanup } from "@testing-library/react";
+import { afterEach } from "vitest";
 
 class ResizeObserverMock {
   observe() {}
@@ -8,11 +8,10 @@ class ResizeObserverMock {
   disconnect() {}
 }
 
-if (typeof window !== 'undefined' && !window.ResizeObserver) {
+if (typeof window !== "undefined" && !window.ResizeObserver) {
   window.ResizeObserver = ResizeObserverMock;
 }
 
 afterEach(() => {
   cleanup();
 });
-

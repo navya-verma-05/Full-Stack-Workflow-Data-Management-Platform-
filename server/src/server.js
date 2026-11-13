@@ -1,8 +1,8 @@
-import { env } from './config/env.js';
-import { connectDB, disconnectDB } from './config/db.js';
-import { logger } from './config/logger.js';
-import { createApp } from './app.js';
-import { startWorker, stopWorker } from './jobs/eventWorker.js';
+import { env } from "./config/env.js";
+import { connectDB, disconnectDB } from "./config/db.js";
+import { logger } from "./config/logger.js";
+import { createApp } from "./app.js";
+import { startWorker, stopWorker } from "./jobs/eventWorker.js";
 
 async function start() {
   await connectDB();
@@ -10,11 +10,11 @@ async function start() {
 
   const app = createApp();
   const server = app.listen(env.PORT, () => {
-    logger.info({ port: env.PORT, env: env.NODE_ENV }, 'Server listening');
+    logger.info({ port: env.PORT, env: env.NODE_ENV }, "Server listening");
   });
 
   const shutdown = async (signal) => {
-    logger.info({ signal }, 'Shutdown signal received');
+    logger.info({ signal }, "Shutdown signal received");
     stopWorker();
     server.close(async () => {
       await disconnectDB();
@@ -22,12 +22,11 @@ async function start() {
     });
   };
 
-  process.on('SIGINT', () => shutdown('SIGINT'));
-  process.on('SIGTERM', () => shutdown('SIGTERM'));
+  process.on("SIGINT", () => shutdown("SIGINT"));
+  process.on("SIGTERM", () => shutdown("SIGTERM"));
 }
 
 start().catch((err) => {
-  logger.fatal({ err }, 'Failed to start server');
+  logger.fatal({ err }, "Failed to start server");
   process.exit(1);
 });
-

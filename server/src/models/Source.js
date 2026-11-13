@@ -1,6 +1,6 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
-export const SOURCE_SCHEMA_TYPES = ['web_form', 'crm', 'partner', 'generic'];
+export const SOURCE_SCHEMA_TYPES = ["web_form", "crm", "partner", "generic"];
 
 const sourceSchema = new mongoose.Schema(
   {
@@ -14,12 +14,12 @@ const sourceSchema = new mongoose.Schema(
       type: String,
       trim: true,
       maxlength: 500,
-      default: '',
+      default: "",
     },
     schemaType: {
       type: String,
       enum: SOURCE_SCHEMA_TYPES,
-      default: 'generic',
+      default: "generic",
       required: true,
     },
     apiKeyHash: {
@@ -55,7 +55,7 @@ const sourceSchema = new mongoose.Schema(
     },
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
+      ref: "User",
       default: null,
     },
   },
@@ -70,7 +70,7 @@ const sourceSchema = new mongoose.Schema(
         return ret;
       },
     },
-  }
+  },
 );
 
 // Unique index on name: prevents duplicate source registrations and optimizes name lookups.
@@ -79,5 +79,4 @@ sourceSchema.index({ name: 1 }, { unique: true });
 // Index on active: speeds up queries filtering enabled webhook sources.
 sourceSchema.index({ active: 1 });
 
-export const Source = mongoose.model('Source', sourceSchema);
-
+export const Source = mongoose.model("Source", sourceSchema);

@@ -1,6 +1,6 @@
-import { useMemo, useState } from 'react';
-import { Check, Copy } from 'lucide-react';
-import { useToast } from '../context/ToastContext';
+import { useMemo, useState } from "react";
+import { Check, Copy } from "lucide-react";
+import { useToast } from "../context/ToastContext";
 
 interface JsonCodeBlockProps {
   title: string;
@@ -9,7 +9,8 @@ interface JsonCodeBlockProps {
   maxHeightClass?: string;
 }
 
-type TokenKind = 'key' | 'string' | 'number' | 'boolean' | 'null' | 'punctuation';
+type TokenKind =
+  "key" | "string" | "number" | "boolean" | "null" | "punctuation";
 
 interface JsonToken {
   kind: TokenKind;
@@ -26,58 +27,67 @@ function tokenizeJson(formatted: string): JsonToken[] {
   for (const match of formatted.matchAll(JSON_TOKEN_REGEX)) {
     const idx = match.index ?? 0;
     if (idx > lastIndex) {
-      tokens.push({ kind: 'punctuation', text: formatted.slice(lastIndex, idx) });
+      tokens.push({
+        kind: "punctuation",
+        text: formatted.slice(lastIndex, idx),
+      });
     }
     const raw = match[0];
-    let kind: TokenKind = 'punctuation';
+    let kind: TokenKind = "punctuation";
     if (raw.startsWith('"')) {
-      kind = raw.endsWith(':') ? 'key' : 'string';
-    } else if (raw === 'true' || raw === 'false') {
-      kind = 'boolean';
-    } else if (raw === 'null') {
-      kind = 'null';
+      kind = raw.endsWith(":") ? "key" : "string";
+    } else if (raw === "true" || raw === "false") {
+      kind = "boolean";
+    } else if (raw === "null") {
+      kind = "null";
     } else if (/^-?\d/.test(raw)) {
-      kind = 'number';
+      kind = "number";
     }
     tokens.push({ kind, text: raw });
     lastIndex = idx + raw.length;
   }
 
   if (lastIndex < formatted.length) {
-    tokens.push({ kind: 'punctuation', text: formatted.slice(lastIndex) });
+    tokens.push({ kind: "punctuation", text: formatted.slice(lastIndex) });
   }
   return tokens;
 }
 
 const TOKEN_CLASSES: Record<TokenKind, string> = {
-  key: 'text-indigo-700 dark:text-indigo-300 font-medium',
-  string: 'text-emerald-700 dark:text-emerald-300',
-  number: 'text-amber-700 dark:text-amber-300',
-  boolean: 'text-sky-700 dark:text-sky-300 font-medium',
-  null: 'text-rose-600 dark:text-rose-400 italic',
-  punctuation: 'text-slate-500 dark:text-slate-400',
+  key: "text-indigo-700 dark:text-indigo-300 font-medium",
+  string: "text-emerald-700 dark:text-emerald-300",
+  number: "text-amber-700 dark:text-amber-300",
+  boolean: "text-sky-700 dark:text-sky-300 font-medium",
+  null: "text-rose-600 dark:text-rose-400 italic",
+  punctuation: "text-slate-500 dark:text-slate-400",
 };
 
 export function JsonCodeBlock({
   title,
   subtitle,
   data,
-  maxHeightClass = 'max-h-[420px]',
+  maxHeightClass = "max-h-[420px]",
 }: JsonCodeBlockProps) {
   const toast = useToast();
   const [copied, setCopied] = useState(false);
 
-  const formatted = useMemo(() => JSON.stringify(data ?? null, null, 2), [data]);
+  const formatted = useMemo(
+    () => JSON.stringify(data ?? null, null, 2),
+    [data],
+  );
   const tokens = useMemo(() => tokenizeJson(formatted), [formatted]);
 
   const handleCopy = async () => {
     try {
       await navigator.clipboard.writeText(formatted);
       setCopied(true);
-      toast.success('JSON copied', `${title} copied to clipboard`);
+      toast.success("JSON copied", `${title} copied to clipboard`);
       window.setTimeout(() => setCopied(false), 1800);
     } catch {
-      toast.error('Copy failed', 'Clipboard permission unavailable in this browser context');
+      toast.error(
+        "Copy failed",
+        "Clipboard permission unavailable in this browser context",
+      );
     }
   };
 
@@ -85,9 +95,13 @@ export function JsonCodeBlock({
     <div className="flex flex-col overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900/60">
       <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-4 py-2.5 dark:border-slate-800 dark:bg-slate-900/90">
         <div>
-          <h3 className="text-xs font-semibold text-slate-900 dark:text-white">{title}</h3>
+          <h3 className="text-xs font-semibold text-slate-900 dark:text-white">
+            {title}
+          </h3>
           {subtitle && (
-            <p className="text-[11px] text-slate-500 dark:text-slate-400">{subtitle}</p>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400">
+              {subtitle}
+            </p>
           )}
         </div>
         <button

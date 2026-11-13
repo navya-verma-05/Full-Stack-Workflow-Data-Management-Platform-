@@ -1,47 +1,53 @@
-import { useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import { Copy, ExternalLink, Search } from 'lucide-react';
-import { api } from '../api/endpoints';
-import { useToast } from '../context/ToastContext';
-import type { EventStatus, WorkflowEvent } from '../types/api';
-import { DateRangePicker } from '../components/DateRangePicker';
-import { EventDrawer } from '../components/EventDrawer';
-import { RelativeTime } from '../components/RelativeTime';
+import { useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { Copy, ExternalLink, Search } from "lucide-react";
+import { api } from "../api/endpoints";
+import { useToast } from "../context/ToastContext";
+import type { EventStatus, WorkflowEvent } from "../types/api";
+import { DateRangePicker } from "../components/DateRangePicker";
+import { EventDrawer } from "../components/EventDrawer";
+import { RelativeTime } from "../components/RelativeTime";
 import {
   EmptyState,
   ErrorState,
   PaginationControls,
   SkeletonTable,
-} from '../components/StateFeedback';
-import { StatusBadge } from '../components/StatusBadge';
+} from "../components/StateFeedback";
+import { StatusBadge } from "../components/StatusBadge";
 
-type StatusChip = '' | 'processed' | 'invalid' | 'failed' | 'dead_letter';
+type StatusChip = "" | "processed" | "invalid" | "failed" | "dead_letter";
 
 const STATUS_CHIPS: Array<{ value: StatusChip; label: string }> = [
-  { value: '', label: 'All' },
-  { value: 'processed', label: 'Processed' },
-  { value: 'invalid', label: 'Invalid' },
-  { value: 'failed', label: 'Failed' },
-  { value: 'dead_letter', label: 'Dead-letter' },
+  { value: "", label: "All" },
+  { value: "processed", label: "Processed" },
+  { value: "invalid", label: "Invalid" },
+  { value: "failed", label: "Failed" },
+  { value: "dead_letter", label: "Dead-letter" },
 ];
 
 function getInitialStatus(raw: string | null): StatusChip {
-  if (raw === 'processed' || raw === 'invalid' || raw === 'failed' || raw === 'dead_letter') {
+  if (
+    raw === "processed" ||
+    raw === "invalid" ||
+    raw === "failed" ||
+    raw === "dead_letter"
+  ) {
     return raw;
   }
-  return '';
+  return "";
 }
 
 function getClientHint(evt: WorkflowEvent): string {
-  const customer = evt.payload.customer as { name?: string; email?: string } | undefined;
+  const customer = evt.payload.customer as
+    { name?: string; email?: string } | undefined;
   return String(
     evt.payload.fullName ||
       evt.payload.name ||
       customer?.name ||
       evt.payload.email ||
       customer?.email ||
-      '—'
+      "—",
   );
 }
 
@@ -50,26 +56,31 @@ export function EventsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
 
   const [page, setPage] = useState(1);
-  const [status, setStatus] = useState<StatusChip>(() => getInitialStatus(searchParams.get('status')));
-  const [sourceId, setSourceId] = useState('');
-  const [from, setFrom] = useState('');
-  const [to, setTo] = useState('');
-  const [searchInput, setSearchInput] = useState('');
-  const [search, setSearch] = useState('');
+  const [status, setStatus] = useState<StatusChip>(() =>
+    getInitialStatus(searchParams.get("status")),
+  );
+  const [sourceId, setSourceId] = useState("");
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
+  const [searchInput, setSearchInput] = useState("");
+  const [search, setSearch] = useState("");
   const [drawerEvent, setDrawerEvent] = useState<WorkflowEvent | null>(null);
 
   const sourcesQuery = useQuery({
-    queryKey: ['sources', { limit: 100 }],
+    queryKey: ["sources", { limit: 100 }],
     queryFn: () => api.getSources({ limit: 100 }),
   });
 
   const summaryCountsQuery = useQuery({
-    queryKey: ['metrics-summary', { sourceId, from, to }],
+    queryKey: ["metrics-summary", { sourceId, from, to }],
     queryFn: () => api.getMetricsSummary({ sourceId, from, to }),
   });
 
   const eventsQuery = useQuery({
-    queryKey: ['events', { page, limit: 20, status, sourceId, from, to, search }],
+    queryKey: [
+      "events",
+      { page, limit: 20, status, sourceId, from, to, search },
+    ],
     queryFn: () =>
       api.getEvents({
         page,
@@ -100,12 +111,12 @@ export function EventsPage() {
 
   const handleClearFilters = () => {
     setPage(1);
-    setStatus('');
-    setSourceId('');
-    setFrom('');
-    setTo('');
-    setSearchInput('');
-    setSearch('');
+    setStatus("");
+    setSourceId("");
+    setFrom("");
+    setTo("");
+    setSearchInput("");
+    setSearch("");
     setSearchParams({}, { replace: true });
   };
 
@@ -113,9 +124,9 @@ export function EventsPage() {
     e.stopPropagation();
     try {
       await navigator.clipboard.writeText(key);
-      toast.success('Copied idempotency key', key);
+      toast.success("Copied idempotency key", key);
     } catch {
-      toast.error('Clipboard unavailable');
+      toast.error("Clipboard unavailable");
     }
   };
 
@@ -124,7 +135,7 @@ export function EventsPage() {
 
   const getChipCount = (chip: StatusChip): number | undefined => {
     if (!summaryCountsQuery.data) return undefined;
-    if (chip === '') return totalEventsCount;
+    if (chip === "") return totalEventsCount;
     return counts?.[chip as EventStatus];
   };
 
@@ -135,7 +146,8 @@ export function EventsPage() {
           Webhook Events
         </h1>
         <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
-          Click any row to inspect payload and retry timeline in a quick drawer, or open the full page.
+          Click any row to inspect payload and retry timeline in a quick drawer,
+          or open the full page.
         </p>
       </div>
 
@@ -156,17 +168,17 @@ export function EventsPage() {
               onClick={() => handleStatusChange(chip.value)}
               className={`inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-xs font-medium transition-colors ${
                 active
-                  ? 'border-indigo-600 bg-indigo-600 text-white shadow-sm'
-                  : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900/70 dark:text-slate-300 dark:hover:bg-slate-800'
+                  ? "border-indigo-600 bg-indigo-600 text-white shadow-sm"
+                  : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900/70 dark:text-slate-300 dark:hover:bg-slate-800"
               }`}
             >
               <span>{chip.label}</span>
-              {typeof count === 'number' && (
+              {typeof count === "number" && (
                 <span
                   className={`rounded-full px-1.5 py-0.5 text-[10px] tabular-nums ${
                     active
-                      ? 'bg-white/20 text-white'
-                      : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400'
+                      ? "bg-white/20 text-white"
+                      : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
                   }`}
                 >
                   {count}
@@ -241,12 +253,19 @@ export function EventsPage() {
       {eventsQuery.isLoading ? (
         <SkeletonTable rows={6} cols={6} label="Loading webhook events..." />
       ) : eventsQuery.isError ? (
-        <ErrorState message={eventsQuery.error.message} onRetry={() => eventsQuery.refetch()} />
+        <ErrorState
+          message={eventsQuery.error.message}
+          onRetry={() => eventsQuery.refetch()}
+        />
       ) : !eventsQuery.data || eventsQuery.data.items.length === 0 ? (
         <EmptyState
           title="No events match these filters"
           description="Try selecting a different status chip, widening your date range, or clearing the search."
-          actionLabel={status || sourceId || from || to || search ? 'Clear filters' : undefined}
+          actionLabel={
+            status || sourceId || from || to || search
+              ? "Clear filters"
+              : undefined
+          }
           onAction={handleClearFilters}
         />
       ) : (
@@ -267,14 +286,16 @@ export function EventsPage() {
                 {eventsQuery.data.items.map((evt) => {
                   const sourceName =
                     evt.source?.name ||
-                    (typeof evt.sourceId === 'object' ? evt.sourceId.name : String(evt.sourceId));
+                    (typeof evt.sourceId === "object"
+                      ? evt.sourceId.name
+                      : String(evt.sourceId));
 
                   return (
                     <tr
                       key={evt._id}
                       onClick={() => setDrawerEvent(evt)}
                       onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
+                        if (e.key === "Enter" || e.key === " ") {
                           e.preventDefault();
                           setDrawerEvent(evt);
                         }
@@ -286,7 +307,9 @@ export function EventsPage() {
                         <StatusBadge status={evt.status} />
                       </td>
                       <td className="px-4 py-3">
-                        <div className="font-medium text-slate-900 dark:text-white">{sourceName}</div>
+                        <div className="font-medium text-slate-900 dark:text-white">
+                          {sourceName}
+                        </div>
                         <div className="truncate text-[11px] text-slate-500 dark:text-slate-400">
                           {getClientHint(evt)}
                         </div>
@@ -302,7 +325,9 @@ export function EventsPage() {
                           <button
                             type="button"
                             aria-label={`Copy key ${evt.idempotencyKey}`}
-                            onClick={(e) => handleCopyKey(e, evt.idempotencyKey)}
+                            onClick={(e) =>
+                              handleCopyKey(e, evt.idempotencyKey)
+                            }
                             className="rounded p-0.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
                           >
                             <Copy className="h-3 w-3" />
@@ -333,7 +358,10 @@ export function EventsPage() {
             </table>
           </div>
 
-          <PaginationControls pagination={eventsQuery.data.pagination} onPageChange={setPage} />
+          <PaginationControls
+            pagination={eventsQuery.data.pagination}
+            onPageChange={setPage}
+          />
         </div>
       )}
 

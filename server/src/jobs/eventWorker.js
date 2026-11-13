@@ -1,13 +1,13 @@
-import crypto from 'node:crypto';
-import { env } from '../config/env.js';
-import { logger } from '../config/logger.js';
-import { Event } from '../models/Event.js';
-import { RecordModel } from '../models/Record.js';
-import { Source } from '../models/Source.js';
+import crypto from "node:crypto";
+import { env } from "../config/env.js";
+import { logger } from "../config/logger.js";
+import { Event } from "../models/Event.js";
+import { RecordModel } from "../models/Record.js";
+import { Source } from "../models/Source.js";
 import {
   normalizePayloadToRecord,
   validateWebhookPayload,
-} from '../services/normalizationService.js';
+} from "../services/normalizationService.js";
 
 const LOCK_TTL_MS = 30_000;
 
@@ -16,23 +16,26 @@ let isPolling = false;
 
 export async function defaultEventProcessor(event, source) {
   if (!source.active) {
-    throw new Error('Source is disabled downstream');
+    throw new Error("Source is disabled downstream");
   }
 
-  if (env.NODE_ENV !== 'production') {
+  if (env.NODE_ENV !== "production") {
     const simulated = await Event.findOneAndUpdate(
       { _id: event._id, simulatedFailuresRemaining: { $gt: 0 } },
       { $inc: { simulatedFailuresRemaining: -1 } },
-      { new: false }
+      { new: false },
     );
     if (simulated) {
-      throw new Error('Simulated downstream transient failure (503)');
+      throw new Error("Simulated downstream transient failure (503)");
     }
   }
 
-  const { valid, data, errors } = validateWebhookPayload(source.schemaType, event.payload);
+  const { valid, data, errors } = validateWebhookPayload(
+    source.schemaType,
+    event.payload,
+  );
   if (!valid) {
-    const err = new Error('Event payload failed validation during processing');
+    const err = new Error("Event payload failed validation during processing");
     err.validationErrors = errors;
     throw err;
   }
@@ -41,14 +44,14 @@ export async function defaultEventProcessor(event, source) {
     source.schemaType,
     data,
     source._id,
-    event._id
+    event._id,
   );
 
   // Upsert keyed by unique eventId so retries remain strictly idempotent at the Record level.
   const record = await RecordModel.findOneAndUpdate(
     { eventId: event._id },
     { $setOnInsert: normalized },
-    { upsert: true, new: true }
+    { upsert: true, new: true },
   );
 
   return record;
@@ -60,9 +63,12 @@ export async function claimNextEvent(workerId = `worker-${process.pid}`) {
 
   return Event.findOneAndUpdate(
     {
-      status: { $in: ['valid', 'failed'] },
+      status: { $in: ["valid", "failed"] },
       nextRetryAt: { $lte: now, $ne: null },
-      $or: [{ processingLockUntil: null }, { processingLockUntil: { $lte: now } }],
+      $or: [
+        { processingLockUntil: null },
+        { processingLockUntil: { $lte: now } },
+      ],
     },
     {
       $set: {
@@ -74,18 +80,21 @@ export async function claimNextEvent(workerId = `worker-${process.pid}`) {
     {
       sort: { nextRetryAt: 1 },
       new: true,
-    }
+    },
   );
 }
 
 export async function processClaimedEvent(
   event,
-  { handler = defaultEventProcessor, baseDelayMs = env.RETRY_BASE_DELAY_MS } = {}
+  {
+    handler = defaultEventProcessor,
+    baseDelayMs = env.RETRY_BASE_DELAY_MS,
+  } = {},
 ) {
   try {
     const source = await Source.findById(event.sourceId);
     if (!source) {
-      throw new Error('Source not found for event');
+      throw new Error("Source not found for event");
     }
 
     const record = await handler(event, source);
@@ -94,7 +103,7 @@ export async function processClaimedEvent(
       event._id,
       {
         $set: {
-          status: 'processed',
+          status: "processed",
           processedAt: new Date(),
           recordId: record?._id || null,
           nextRetryAt: null,
@@ -105,31 +114,35 @@ export async function processClaimedEvent(
         $push: {
           processingLogs: {
             timestamp: new Date(),
-            stage: 'process',
-            level: 'info',
+            stage: "process",
+            level: "info",
             message: `Processed successfully on attempt ${event.attempts} into Record ${record?._id}`,
           },
         },
       },
-      { new: true }
+      { new: true },
     );
 
     return updated;
   } catch (err) {
     const exhausted = event.attempts >= event.maxAttempts;
-    const backoffMs = baseDelayMs * Math.pow(2, Math.max(0, event.attempts - 1));
+    const backoffMs =
+      baseDelayMs * Math.pow(2, Math.max(0, event.attempts - 1));
     const nextRetryAt = exhausted ? null : new Date(Date.now() + backoffMs);
-    const nextStatus = exhausted ? 'dead_letter' : 'failed';
+    const nextStatus = exhausted ? "dead_letter" : "failed";
 
     const logEntry = {
       timestamp: new Date(),
-      stage: exhausted ? 'dead_letter' : 'retry',
-      level: exhausted ? 'error' : 'warn',
+      stage: exhausted ? "dead_letter" : "retry",
+      level: exhausted ? "error" : "warn",
       message: exhausted
-        ? `Exhausted ${event.maxAttempts} attempts: ${err.message}`.slice(0, 500)
+        ? `Exhausted ${event.maxAttempts} attempts: ${err.message}`.slice(
+            0,
+            500,
+          )
         : `Attempt ${event.attempts}/${event.maxAttempts} failed (${err.message}); retry scheduled in ${backoffMs}ms`.slice(
             0,
-            500
+            500,
           ),
     };
 
@@ -145,10 +158,12 @@ export async function processClaimedEvent(
         },
         $push: {
           processingLogs: logEntry,
-          ...(err.validationErrors ? { errors: { $each: err.validationErrors } } : {}),
+          ...(err.validationErrors
+            ? { errors: { $each: err.validationErrors } }
+            : {}),
         },
       },
-      { new: true }
+      { new: true },
     );
 
     return updated;
@@ -175,14 +190,14 @@ export async function processPendingEvents({
 }
 
 export function kickWorker() {
-  if (env.NODE_ENV === 'test') {
+  if (env.NODE_ENV === "test") {
     return;
   }
   setImmediate(async () => {
     try {
       await processPendingEvents();
     } catch (err) {
-      logger.error({ err }, 'Async worker kick failed');
+      logger.error({ err }, "Async worker kick failed");
     }
   });
 }
@@ -196,21 +211,20 @@ export function startWorker(intervalMs = env.RETRY_POLL_INTERVAL_MS) {
     try {
       await processPendingEvents();
     } catch (err) {
-      logger.error({ err }, 'Retry worker poll cycle failed');
+      logger.error({ err }, "Retry worker poll cycle failed");
     } finally {
       isPolling = false;
     }
   }, intervalMs);
 
   pollTimer.unref?.();
-  logger.info({ intervalMs }, 'Mongo-backed event retry worker started');
+  logger.info({ intervalMs }, "Mongo-backed event retry worker started");
 }
 
 export function stopWorker() {
   if (pollTimer) {
     clearInterval(pollTimer);
     pollTimer = null;
-    logger.info('Mongo-backed event retry worker stopped');
+    logger.info("Mongo-backed event retry worker stopped");
   }
 }
-

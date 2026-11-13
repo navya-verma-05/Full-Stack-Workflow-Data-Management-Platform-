@@ -1,4 +1,4 @@
-import { getUserById, listUsers, updateUser } from '../services/userService.js';
+import { getUserById, listUsers, updateUser } from "../services/userService.js";
 
 export async function list(req, res, next) {
   try {
@@ -29,4 +29,3 @@ export async function update(req, res, next) {
     return next(err);
   }
 }
-

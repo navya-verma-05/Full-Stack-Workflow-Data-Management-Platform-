@@ -4,7 +4,7 @@ import {
   listSources,
   rotateSourceSecret,
   updateSource,
-} from '../services/sourceService.js';
+} from "../services/sourceService.js";
 
 export async function list(req, res, next) {
   try {
@@ -56,4 +56,3 @@ export async function rotateSecret(req, res, next) {
     return next(err);
   }
 }
-

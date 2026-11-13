@@ -5,12 +5,12 @@ import {
   refreshSession,
   registerUser,
   signAccessToken,
-} from '../services/authService.js';
+} from "../services/authService.js";
 import {
   REFRESH_COOKIE_NAME,
   clearRefreshCookie,
   setRefreshCookie,
-} from '../utils/cookies.js';
+} from "../utils/cookies.js";
 
 export async function register(req, res, next) {
   try {
@@ -35,7 +35,9 @@ export async function register(req, res, next) {
 
 export async function login(req, res, next) {
   try {
-    const { user, accessToken, refreshToken } = await loginUser(req.body, { req });
+    const { user, accessToken, refreshToken } = await loginUser(req.body, {
+      req,
+    });
     setRefreshCookie(res, refreshToken);
     return res.status(200).json({ user, accessToken });
   } catch (err) {
@@ -60,7 +62,7 @@ export async function logout(req, res, next) {
     const token = req.cookies?.[REFRESH_COOKIE_NAME];
     await logoutSession(token, { actor: req.user || null, req });
     clearRefreshCookie(res);
-    return res.status(200).json({ message: 'Logged out successfully' });
+    return res.status(200).json({ message: "Logged out successfully" });
   } catch (err) {
     return next(err);
   }

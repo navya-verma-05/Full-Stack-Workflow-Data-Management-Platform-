@@ -1,13 +1,17 @@
-import { z } from 'zod';
-import { EVENT_STATUSES } from '../models/Event.js';
-import { boundedString, objectIdSchema, paginationQuerySchema } from './common.js';
+import { z } from "zod";
+import { EVENT_STATUSES } from "../models/Event.js";
+import {
+  boundedString,
+  objectIdSchema,
+  paginationQuerySchema,
+} from "./common.js";
 
 const dateStringSchema = z
   .string()
   .trim()
   .max(40)
   .refine((val) => !Number.isNaN(Date.parse(val)), {
-    message: 'Invalid ISO date string',
+    message: "Invalid ISO date string",
   });
 
 const searchSchema = boundedString(1, 100);
@@ -28,7 +32,7 @@ export const metricsTimeSeriesSchema = {
       from: dateStringSchema.optional(),
       to: dateStringSchema.optional(),
       sourceId: objectIdSchema.optional(),
-      granularity: z.enum(['day', 'hour']).default('day'),
+      granularity: z.enum(["day", "hour"]).default("day"),
     })
     .strict(),
 };
@@ -40,11 +44,11 @@ const statusFilterSchema = z
   .refine(
     (val) =>
       val
-        .split(',')
+        .split(",")
         .map((s) => s.trim())
         .filter(Boolean)
         .every((s) => EVENT_STATUSES.includes(s)),
-    { message: `status must be one or more of: ${EVENT_STATUSES.join(', ')}` }
+    { message: `status must be one or more of: ${EVENT_STATUSES.join(", ")}` },
   );
 
 export const listEventsSchema = {
@@ -91,4 +95,3 @@ export const listAuditLogsSchema = {
     })
     .strict(),
 };
-

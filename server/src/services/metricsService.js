@@ -1,6 +1,6 @@
-import mongoose from 'mongoose';
-import { Event, EVENT_STATUSES } from '../models/Event.js';
-import { parseDateRange } from '../utils/queryHelpers.js';
+import mongoose from "mongoose";
+import { Event, EVENT_STATUSES } from "../models/Event.js";
+import { parseDateRange } from "../utils/queryHelpers.js";
 
 const DAY_MS = 86_400_000;
 
@@ -32,7 +32,7 @@ function resolveComparisonWindows({ from, to }) {
       currentWindow: { $gte: curStart, $lte: curEnd },
       prevStart: new Date(curStart.getTime() - spanMs),
       prevEnd: new Date(curStart.getTime() - 1),
-      comparisonLabel: 'vs previous period',
+      comparisonLabel: "vs previous period",
       useCurrentMatchDirectly: true,
     };
   }
@@ -44,7 +44,7 @@ function resolveComparisonWindows({ from, to }) {
       currentWindow: { $gte: curStart, $lte: now },
       prevStart: new Date(curStart.getTime() - spanMs),
       prevEnd: new Date(curStart.getTime() - 1),
-      comparisonLabel: 'vs previous period',
+      comparisonLabel: "vs previous period",
       useCurrentMatchDirectly: true,
     };
   }
@@ -58,7 +58,7 @@ function resolveComparisonWindows({ from, to }) {
       currentWindow: { $gte: curStart, $lte: curEnd },
       prevStart,
       prevEnd,
-      comparisonLabel: 'vs prior 7d',
+      comparisonLabel: "vs prior 7d",
       useCurrentMatchDirectly: false,
     };
   }
@@ -71,7 +71,7 @@ function resolveComparisonWindows({ from, to }) {
     currentWindow: { $gte: curStart, $lte: now },
     prevStart,
     prevEnd,
-    comparisonLabel: '7d vs prior 7d',
+    comparisonLabel: "vs prior 7d",
     useCurrentMatchDirectly: false,
   };
 }
@@ -81,11 +81,15 @@ async function aggregateWindowTotals(match) {
     { $match: match },
     {
       $facet: {
-        byStatus: [{ $group: { _id: '$status', count: { $sum: 1 } } }],
+        byStatus: [{ $group: { _id: "$status", count: { $sum: 1 } } }],
         latency: [
-          { $match: { status: 'processed', processedAt: { $ne: null } } },
-          { $project: { durationMs: { $subtract: ['$processedAt', '$receivedAt'] } } },
-          { $group: { _id: null, avgProcessingMs: { $avg: '$durationMs' } } },
+          { $match: { status: "processed", processedAt: { $ne: null } } },
+          {
+            $project: {
+              durationMs: { $subtract: ["$processedAt", "$receivedAt"] },
+            },
+          },
+          { $group: { _id: null, avgProcessingMs: { $avg: "$durationMs" } } },
         ],
       },
     },
@@ -99,7 +103,8 @@ async function aggregateWindowTotals(match) {
   }
 
   const avgProcessingMs = Math.round(agg?.latency?.[0]?.avgProcessingMs || 0);
-  const successRate = total > 0 ? Math.round((counts.processed / total) * 1000) / 10 : 0;
+  const successRate =
+    total > 0 ? Math.round((counts.processed / total) * 1000) / 10 : 0;
 
   return {
     total,
@@ -118,7 +123,9 @@ function pctDelta(current, previous) {
 
 export async function getMetricsSummary({ from, to, sourceId }) {
   const match = buildEventMatchStage({ from, to, sourceId });
-  const sourceFilter = sourceId ? { sourceId: new mongoose.Types.ObjectId(sourceId) } : {};
+  const sourceFilter = sourceId
+    ? { sourceId: new mongoose.Types.ObjectId(sourceId) }
+    : {};
 
   // Single-pass $facet aggregation computes status totals, per-source breakdown, and latency stats.
   const [[result], latestEvent] = await Promise.all([
@@ -129,7 +136,7 @@ export async function getMetricsSummary({ from, to, sourceId }) {
           byStatus: [
             {
               $group: {
-                _id: '$status',
+                _id: "$status",
                 count: { $sum: 1 },
               },
             },
@@ -137,27 +144,27 @@ export async function getMetricsSummary({ from, to, sourceId }) {
           bySource: [
             {
               $group: {
-                _id: '$sourceId',
+                _id: "$sourceId",
                 total: { $sum: 1 },
                 processed: {
-                  $sum: { $cond: [{ $eq: ['$status', 'processed'] }, 1, 0] },
+                  $sum: { $cond: [{ $eq: ["$status", "processed"] }, 1, 0] },
                 },
                 invalid: {
-                  $sum: { $cond: [{ $eq: ['$status', 'invalid'] }, 1, 0] },
+                  $sum: { $cond: [{ $eq: ["$status", "invalid"] }, 1, 0] },
                 },
                 failed: {
-                  $sum: { $cond: [{ $eq: ['$status', 'failed'] }, 1, 0] },
+                  $sum: { $cond: [{ $eq: ["$status", "failed"] }, 1, 0] },
                 },
                 dead_letter: {
-                  $sum: { $cond: [{ $eq: ['$status', 'dead_letter'] }, 1, 0] },
+                  $sum: { $cond: [{ $eq: ["$status", "dead_letter"] }, 1, 0] },
                 },
               },
             },
             {
               $lookup: {
-                from: 'sources',
-                localField: '_id',
-                foreignField: '_id',
+                from: "sources",
+                localField: "_id",
+                foreignField: "_id",
                 pipeline: [
                   {
                     $project: {
@@ -167,22 +174,22 @@ export async function getMetricsSummary({ from, to, sourceId }) {
                     },
                   },
                 ],
-                as: 'source',
+                as: "source",
               },
             },
             {
               $unwind: {
-                path: '$source',
+                path: "$source",
                 preserveNullAndEmptyArrays: true,
               },
             },
             {
               $project: {
                 _id: 0,
-                sourceId: '$_id',
-                sourceName: { $ifNull: ['$source.name', 'Unknown Source'] },
-                schemaType: { $ifNull: ['$source.schemaType', 'generic'] },
-                active: { $ifNull: ['$source.active', false] },
+                sourceId: "$_id",
+                sourceName: { $ifNull: ["$source.name", "Unknown Source"] },
+                schemaType: { $ifNull: ["$source.schemaType", "generic"] },
+                active: { $ifNull: ["$source.active", false] },
                 total: 1,
                 processed: 1,
                 invalid: 1,
@@ -195,26 +202,29 @@ export async function getMetricsSummary({ from, to, sourceId }) {
           latency: [
             {
               $match: {
-                status: 'processed',
+                status: "processed",
                 processedAt: { $ne: null },
               },
             },
             {
               $project: {
-                durationMs: { $subtract: ['$processedAt', '$receivedAt'] },
+                durationMs: { $subtract: ["$processedAt", "$receivedAt"] },
               },
             },
             {
               $group: {
                 _id: null,
-                avgProcessingMs: { $avg: '$durationMs' },
+                avgProcessingMs: { $avg: "$durationMs" },
               },
             },
           ],
         },
       },
     ]),
-    Event.findOne(sourceFilter).sort({ receivedAt: -1 }).select('receivedAt').lean(),
+    Event.findOne(sourceFilter)
+      .sort({ receivedAt: -1 })
+      .select("receivedAt")
+      .lean(),
   ]);
 
   const counts = Object.fromEntries(EVENT_STATUSES.map((s) => [s, 0]));
@@ -227,11 +237,19 @@ export async function getMetricsSummary({ from, to, sourceId }) {
     total += row.count;
   }
 
-  const avgProcessingMs = Math.round(result?.latency?.[0]?.avgProcessingMs || 0);
-  const successRate = total > 0 ? Math.round((counts.processed / total) * 1000) / 10 : 0;
+  const avgProcessingMs = Math.round(
+    result?.latency?.[0]?.avgProcessingMs || 0,
+  );
+  const successRate =
+    total > 0 ? Math.round((counts.processed / total) * 1000) / 10 : 0;
 
-  const { currentWindow, prevStart, prevEnd, comparisonLabel, useCurrentMatchDirectly } =
-    resolveComparisonWindows({ from, to });
+  const {
+    currentWindow,
+    prevStart,
+    prevEnd,
+    comparisonLabel,
+    useCurrentMatchDirectly,
+  } = resolveComparisonWindows({ from, to });
 
   const [comparisonCurrent, previous] = await Promise.all([
     useCurrentMatchDirectly
@@ -245,16 +263,33 @@ export async function getMetricsSummary({ from, to, sourceId }) {
 
   const deltas = {
     totalPct: pctDelta(comparisonCurrent.total, previous.total),
-    processedPct: pctDelta(comparisonCurrent.counts.processed, previous.counts.processed),
-    invalidPct: pctDelta(comparisonCurrent.counts.invalid, previous.counts.invalid),
-    failedPct: pctDelta(comparisonCurrent.counts.failed, previous.counts.failed),
-    deadLetterPct: pctDelta(comparisonCurrent.counts.dead_letter, previous.counts.dead_letter),
+    processedPct: pctDelta(
+      comparisonCurrent.counts.processed,
+      previous.counts.processed,
+    ),
+    invalidPct: pctDelta(
+      comparisonCurrent.counts.invalid,
+      previous.counts.invalid,
+    ),
+    failedPct: pctDelta(
+      comparisonCurrent.counts.failed,
+      previous.counts.failed,
+    ),
+    deadLetterPct: pctDelta(
+      comparisonCurrent.counts.dead_letter,
+      previous.counts.dead_letter,
+    ),
     attentionPct: pctDelta(
       comparisonCurrent.counts.failed + comparisonCurrent.counts.dead_letter,
-      previous.counts.failed + previous.counts.dead_letter
+      previous.counts.failed + previous.counts.dead_letter,
     ),
-    successRatePts: Math.round((comparisonCurrent.successRate - previous.successRate) * 10) / 10,
-    avgProcessingMsPct: pctDelta(comparisonCurrent.avgProcessingMs, previous.avgProcessingMs),
+    successRatePts:
+      Math.round((comparisonCurrent.successRate - previous.successRate) * 10) /
+      10,
+    avgProcessingMsPct: pctDelta(
+      comparisonCurrent.avgProcessingMs,
+      previous.avgProcessingMs,
+    ),
     comparisonLabel,
   };
 
@@ -263,7 +298,9 @@ export async function getMetricsSummary({ from, to, sourceId }) {
     counts,
     successRate,
     avgProcessingMs,
-    lastEventReceivedAt: latestEvent?.receivedAt ? new Date(latestEvent.receivedAt).toISOString() : null,
+    lastEventReceivedAt: latestEvent?.receivedAt
+      ? new Date(latestEvent.receivedAt).toISOString()
+      : null,
     previousPeriod: {
       total: previous.total,
       counts: previous.counts,
@@ -283,9 +320,14 @@ export async function getMetricsSummary({ from, to, sourceId }) {
   };
 }
 
-export async function getMetricsTimeSeries({ from, to, sourceId, granularity = 'day' }) {
+export async function getMetricsTimeSeries({
+  from,
+  to,
+  sourceId,
+  granularity = "day",
+}) {
   const match = buildEventMatchStage({ from, to, sourceId });
-  const dateFormat = granularity === 'hour' ? '%Y-%m-%dT%H:00:00Z' : '%Y-%m-%d';
+  const dateFormat = granularity === "hour" ? "%Y-%m-%dT%H:00:00Z" : "%Y-%m-%d";
 
   const buckets = await Event.aggregate([
     { $match: match },
@@ -294,28 +336,28 @@ export async function getMetricsTimeSeries({ from, to, sourceId, granularity = '
         _id: {
           $dateToString: {
             format: dateFormat,
-            date: '$receivedAt',
-            timezone: 'UTC',
+            date: "$receivedAt",
+            timezone: "UTC",
           },
         },
         total: { $sum: 1 },
         received: {
-          $sum: { $cond: [{ $eq: ['$status', 'received'] }, 1, 0] },
+          $sum: { $cond: [{ $eq: ["$status", "received"] }, 1, 0] },
         },
         valid: {
-          $sum: { $cond: [{ $eq: ['$status', 'valid'] }, 1, 0] },
+          $sum: { $cond: [{ $eq: ["$status", "valid"] }, 1, 0] },
         },
         processed: {
-          $sum: { $cond: [{ $eq: ['$status', 'processed'] }, 1, 0] },
+          $sum: { $cond: [{ $eq: ["$status", "processed"] }, 1, 0] },
         },
         invalid: {
-          $sum: { $cond: [{ $eq: ['$status', 'invalid'] }, 1, 0] },
+          $sum: { $cond: [{ $eq: ["$status", "invalid"] }, 1, 0] },
         },
         failed: {
-          $sum: { $cond: [{ $eq: ['$status', 'failed'] }, 1, 0] },
+          $sum: { $cond: [{ $eq: ["$status", "failed"] }, 1, 0] },
         },
         dead_letter: {
-          $sum: { $cond: [{ $eq: ['$status', 'dead_letter'] }, 1, 0] },
+          $sum: { $cond: [{ $eq: ["$status", "dead_letter"] }, 1, 0] },
         },
       },
     },
@@ -323,7 +365,7 @@ export async function getMetricsTimeSeries({ from, to, sourceId, granularity = '
     {
       $project: {
         _id: 0,
-        bucket: '$_id',
+        bucket: "$_id",
         total: 1,
         received: 1,
         valid: 1,

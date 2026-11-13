@@ -3,7 +3,7 @@ import {
   listAuditLogs,
   listEvents,
   listRecords,
-} from '../services/dashboardService.js';
+} from "../services/dashboardService.js";
 
 export async function getEvents(req, res, next) {
   try {
@@ -40,4 +40,3 @@ export async function getAuditLogs(req, res, next) {
     return next(err);
   }
 }
-

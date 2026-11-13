@@ -1,6 +1,10 @@
-import { z } from 'zod';
-import { USER_ROLES } from '../models/User.js';
-import { boundedString, objectIdSchema, paginationQuerySchema } from './common.js';
+import { z } from "zod";
+import { USER_ROLES } from "../models/User.js";
+import {
+  boundedString,
+  objectIdSchema,
+  paginationQuerySchema,
+} from "./common.js";
 
 export const userIdParamSchema = {
   params: z
@@ -15,8 +19,8 @@ export const listUsersSchema = {
     .extend({
       role: z.enum(USER_ROLES).optional(),
       active: z
-        .enum(['true', 'false'])
-        .transform((v) => v === 'true')
+        .enum(["true", "false"])
+        .transform((v) => v === "true")
         .optional(),
       search: boundedString(1, 120).optional(),
     })
@@ -37,7 +41,6 @@ export const updateUserSchema = {
     })
     .strict()
     .refine((data) => Object.keys(data).length > 0, {
-      message: 'At least one field (name, role, active) must be provided',
+      message: "At least one field (name, role, active) must be provided",
     }),
 };
-

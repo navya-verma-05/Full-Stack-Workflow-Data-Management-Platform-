@@ -1,10 +1,10 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
 const refreshTokenSchema = new mongoose.Schema(
   {
     userId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
+      ref: "User",
       required: true,
     },
     tokenHash: {
@@ -26,7 +26,7 @@ const refreshTokenSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 // Unique index on tokenHash: allows O(log N) lookup and prevents duplicate token hashes.
@@ -38,5 +38,4 @@ refreshTokenSchema.index({ userId: 1, revokedAt: 1 });
 // TTL index on expiresAt: automatically removes expired refresh token records from MongoDB.
 refreshTokenSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
-export const RefreshToken = mongoose.model('RefreshToken', refreshTokenSchema);
-
+export const RefreshToken = mongoose.model("RefreshToken", refreshTokenSchema);

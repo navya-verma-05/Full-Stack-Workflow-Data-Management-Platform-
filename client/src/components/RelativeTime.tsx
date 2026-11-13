@@ -1,4 +1,4 @@
-import { formatDateTime, formatRelativeTime } from '../utils/date';
+import { formatDateTime, formatRelativeTime } from "../utils/date";
 
 interface RelativeTimeProps {
   value: string | Date | null | undefined;
@@ -6,14 +6,18 @@ interface RelativeTimeProps {
   className?: string;
 }
 
-export function RelativeTime({ value, fallback = 'Never', className = '' }: RelativeTimeProps) {
+export function RelativeTime({
+  value,
+  fallback = "Never",
+  className = "",
+}: RelativeTimeProps) {
   if (!value) {
     return <span className={className}>{fallback}</span>;
   }
 
   const exact = formatDateTime(value);
   const relative = formatRelativeTime(value);
-  const iso = typeof value === 'string' ? value : value.toISOString();
+  const iso = typeof value === "string" ? value : value.toISOString();
 
   return (
     <time
@@ -25,4 +29,3 @@ export function RelativeTime({ value, fallback = 'Never', className = '' }: Rela
     </time>
   );
 }
-

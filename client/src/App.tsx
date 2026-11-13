@@ -1,18 +1,18 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
-import { AuthProvider } from './context/AuthContext';
-import { ThemeProvider } from './context/ThemeContext';
-import { ToastProvider } from './context/ToastContext';
-import { Layout } from './components/Layout';
-import { ProtectedRoute, RoleRoute } from './components/ProtectedRoute';
-import { LoginPage } from './pages/LoginPage';
-import { OverviewPage } from './pages/OverviewPage';
-import { EventsPage } from './pages/EventsPage';
-import { EventDetailPage } from './pages/EventDetailPage';
-import { RecordsPage } from './pages/RecordsPage';
-import { SourcesPage } from './pages/SourcesPage';
-import { UsersPage } from './pages/UsersPage';
-import { AuditLogsPage } from './pages/AuditLogsPage';
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { AuthProvider } from "./context/AuthContext";
+import { ThemeProvider } from "./context/ThemeContext";
+import { ToastProvider } from "./context/ToastContext";
+import { Layout } from "./components/Layout";
+import { ProtectedRoute, RoleRoute } from "./components/ProtectedRoute";
+import { LoginPage } from "./pages/LoginPage";
+import { OverviewPage } from "./pages/OverviewPage";
+import { EventsPage } from "./pages/EventsPage";
+import { EventDetailPage } from "./pages/EventDetailPage";
+import { RecordsPage } from "./pages/RecordsPage";
+import { SourcesPage } from "./pages/SourcesPage";
+import { UsersPage } from "./pages/UsersPage";
+import { AuditLogsPage } from "./pages/AuditLogsPage";
 
 export function createAppQueryClient() {
   return new QueryClient({
@@ -36,7 +36,7 @@ export function AppRoutes() {
           <Route path="/events/:id" element={<EventDetailPage />} />
           <Route path="/records" element={<RecordsPage />} />
           <Route path="/sources" element={<SourcesPage />} />
-          <Route element={<RoleRoute allowedRoles={['admin']} />}>
+          <Route element={<RoleRoute allowedRoles={["admin"]} />}>
             <Route path="/users" element={<UsersPage />} />
             <Route path="/audit-logs" element={<AuditLogsPage />} />
           </Route>

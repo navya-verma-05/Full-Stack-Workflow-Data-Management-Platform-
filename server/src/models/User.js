@@ -1,6 +1,6 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
-export const USER_ROLES = ['admin', 'manager', 'viewer'];
+export const USER_ROLES = ["admin", "manager", "viewer"];
 
 const userSchema = new mongoose.Schema(
   {
@@ -25,7 +25,7 @@ const userSchema = new mongoose.Schema(
     role: {
       type: String,
       enum: USER_ROLES,
-      default: 'viewer',
+      default: "viewer",
       required: true,
     },
     active: {
@@ -47,7 +47,7 @@ const userSchema = new mongoose.Schema(
         return ret;
       },
     },
-  }
+  },
 );
 
 // Unique index on email: guarantees one account per email and makes login lookups O(log N).
@@ -56,5 +56,4 @@ userSchema.index({ email: 1 }, { unique: true });
 // Compound index on role + active: speeds up admin user-management filtering by role and status.
 userSchema.index({ role: 1, active: 1 });
 
-export const User = mongoose.model('User', userSchema);
-
+export const User = mongoose.model("User", userSchema);

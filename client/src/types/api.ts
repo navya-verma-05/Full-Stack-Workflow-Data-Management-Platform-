@@ -1,4 +1,4 @@
-export type UserRole = 'admin' | 'manager' | 'viewer';
+export type UserRole = "admin" | "manager" | "viewer";
 
 export interface User {
   _id: string;
@@ -11,7 +11,7 @@ export interface User {
   updatedAt: string;
 }
 
-export type SourceSchemaType = 'web_form' | 'crm' | 'partner' | 'generic';
+export type SourceSchemaType = "web_form" | "crm" | "partner" | "generic";
 
 export interface Source {
   _id: string;
@@ -26,12 +26,7 @@ export interface Source {
 }
 
 export type EventStatus =
-  | 'received'
-  | 'valid'
-  | 'invalid'
-  | 'processed'
-  | 'failed'
-  | 'dead_letter';
+  "received" | "valid" | "invalid" | "processed" | "failed" | "dead_letter";
 
 export interface EventErrorItem {
   field: string;
@@ -42,7 +37,7 @@ export interface EventErrorItem {
 export interface ProcessingLogItem {
   timestamp: string;
   stage: string;
-  level: 'info' | 'warn' | 'error';
+  level: "info" | "warn" | "error";
   message: string;
 }
 
@@ -60,13 +55,13 @@ export interface NormalizedRecord {
   currency: string;
   metadata: Record<string, unknown>;
   normalizedAt: string;
-  source?: Pick<Source, '_id' | 'name' | 'schemaType' | 'active'>;
+  source?: Pick<Source, "_id" | "name" | "schemaType" | "active">;
 }
 
 export interface WorkflowEvent {
   _id: string;
-  sourceId: string | Pick<Source, '_id' | 'name' | 'schemaType' | 'active'>;
-  source?: Pick<Source, '_id' | 'name' | 'schemaType' | 'active'>;
+  sourceId: string | Pick<Source, "_id" | "name" | "schemaType" | "active">;
+  source?: Pick<Source, "_id" | "name" | "schemaType" | "active">;
   payload: Record<string, unknown>;
   status: EventStatus;
   errors: EventErrorItem[];
@@ -153,7 +148,7 @@ export interface MetricsSummary {
 }
 
 export interface MetricsTimeSeries {
-  granularity: 'day' | 'hour';
+  granularity: "day" | "hour";
   buckets: Array<{
     bucket: string;
     total: number;
@@ -165,4 +160,3 @@ export interface MetricsTimeSeries {
     dead_letter: number;
   }>;
 }
-

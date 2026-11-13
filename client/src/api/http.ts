@@ -1,4 +1,4 @@
-const API_BASE = (import.meta.env.VITE_API_URL || '/api').replace(/\/$/, '');
+const API_BASE = (import.meta.env.VITE_API_URL || "/api").replace(/\/$/, "");
 
 // Access token is kept strictly in module memory (never localStorage or sessionStorage).
 let inMemoryAccessToken: string | null = null;
@@ -22,9 +22,14 @@ export class ApiError extends Error {
   code: string;
   details?: unknown;
 
-  constructor(message: string, status: number, code = 'API_ERROR', details?: unknown) {
+  constructor(
+    message: string,
+    status: number,
+    code = "API_ERROR",
+    details?: unknown,
+  ) {
     super(message);
-    this.name = 'ApiError';
+    this.name = "ApiError";
     this.status = status;
     this.code = code;
     this.details = details;
@@ -33,12 +38,12 @@ export class ApiError extends Error {
 
 export async function refreshAccessToken(): Promise<{
   accessToken: string;
-  user: import('../types/api').User;
+  user: import("../types/api").User;
 } | null> {
   const res = await fetch(`${API_BASE}/auth/refresh`, {
-    method: 'POST',
-    credentials: 'include',
-    headers: { 'Content-Type': 'application/json' },
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
   });
 
   if (!res.ok) {
@@ -64,33 +69,33 @@ async function getRefreshedTokenSingleFlight(): Promise<string | null> {
 
 export async function apiRequest<T>(
   path: string,
-  options: RequestInit & { skipAuthRefresh?: boolean } = {}
+  options: RequestInit & { skipAuthRefresh?: boolean } = {},
 ): Promise<T> {
   const { skipAuthRefresh = false, headers, ...rest } = options;
 
   const makeHeaders = (token: string | null) => ({
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
     ...headers,
   });
 
   let response = await fetch(`${API_BASE}${path}`, {
     ...rest,
-    credentials: 'include',
+    credentials: "include",
     headers: makeHeaders(inMemoryAccessToken),
   });
 
   if (
     response.status === 401 &&
     !skipAuthRefresh &&
-    !path.startsWith('/auth/login') &&
-    !path.startsWith('/auth/refresh')
+    !path.startsWith("/auth/login") &&
+    !path.startsWith("/auth/refresh")
   ) {
     const newToken = await getRefreshedTokenSingleFlight();
     if (newToken) {
       response = await fetch(`${API_BASE}${path}`, {
         ...rest,
-        credentials: 'include',
+        credentials: "include",
         headers: makeHeaders(newToken),
       });
     } else if (onAuthFailure) {
@@ -102,22 +107,24 @@ export async function apiRequest<T>(
   const body = text ? JSON.parse(text) : {};
 
   if (!response.ok) {
-    const message = body?.error?.message || `Request failed with status ${response.status}`;
-    const code = body?.error?.code || 'API_ERROR';
+    const message =
+      body?.error?.message || `Request failed with status ${response.status}`;
+    const code = body?.error?.code || "API_ERROR";
     throw new ApiError(message, response.status, code, body?.error?.details);
   }
 
   return body as T;
 }
 
-export function buildQueryString(params: Record<string, string | number | boolean | undefined>) {
+export function buildQueryString(
+  params: Record<string, string | number | boolean | undefined>,
+) {
   const sp = new URLSearchParams();
   for (const [k, v] of Object.entries(params)) {
-    if (v !== undefined && v !== '') {
+    if (v !== undefined && v !== "") {
       sp.set(k, String(v));
     }
   }
   const qs = sp.toString();
-  return qs ? `?${qs}` : '';
+  return qs ? `?${qs}` : "";
 }
-

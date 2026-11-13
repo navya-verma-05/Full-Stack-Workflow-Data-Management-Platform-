@@ -1,52 +1,51 @@
-import { Router } from 'express';
-import { authenticate, authorize } from '../middleware/auth.js';
-import { validate } from '../middleware/validate.js';
+import { Router } from "express";
+import { authenticate, authorize } from "../middleware/auth.js";
+import { validate } from "../middleware/validate.js";
 import {
   createSourceSchema,
   listSourcesSchema,
   sourceIdParamSchema,
   updateSourceSchema,
-} from '../validators/sourceValidators.js';
-import * as sourceController from '../controllers/sourceController.js';
+} from "../validators/sourceValidators.js";
+import * as sourceController from "../controllers/sourceController.js";
 
 const router = Router();
 
 router.use(authenticate);
 
 router.get(
-  '/',
-  authorize('admin', 'manager', 'viewer'),
+  "/",
+  authorize("admin", "manager", "viewer"),
   validate(listSourcesSchema),
-  sourceController.list
+  sourceController.list,
 );
 
 router.get(
-  '/:id',
-  authorize('admin', 'manager', 'viewer'),
+  "/:id",
+  authorize("admin", "manager", "viewer"),
   validate(sourceIdParamSchema),
-  sourceController.getById
+  sourceController.getById,
 );
 
 router.post(
-  '/',
-  authorize('admin'),
+  "/",
+  authorize("admin"),
   validate(createSourceSchema),
-  sourceController.create
+  sourceController.create,
 );
 
 router.patch(
-  '/:id',
-  authorize('admin'),
+  "/:id",
+  authorize("admin"),
   validate(updateSourceSchema),
-  sourceController.update
+  sourceController.update,
 );
 
 router.post(
-  '/:id/rotate-secret',
-  authorize('admin'),
+  "/:id/rotate-secret",
+  authorize("admin"),
   validate(sourceIdParamSchema),
-  sourceController.rotateSecret
+  sourceController.rotateSecret,
 );
 
 export default router;
-

@@ -1,12 +1,18 @@
-import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
-import { api } from '../api/endpoints';
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { api } from "../api/endpoints";
 import {
   refreshAccessToken,
   setAccessToken,
   setAuthFailureHandler,
-} from '../api/http';
-import type { User } from '../types/api';
+} from "../api/http";
+import type { User } from "../types/api";
 
 interface AuthContextValue {
   user: User | null;
@@ -79,8 +85,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 export function useAuth() {
   const ctx = useContext(AuthContext);
   if (!ctx) {
-    throw new Error('useAuth must be used inside AuthProvider');
+    throw new Error("useAuth must be used inside AuthProvider");
   }
   return ctx;
 }
-

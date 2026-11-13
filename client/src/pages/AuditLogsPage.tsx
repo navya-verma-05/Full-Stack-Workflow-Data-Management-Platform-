@@ -1,27 +1,30 @@
-import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { Search } from 'lucide-react';
-import { api } from '../api/endpoints';
-import { DateRangePicker } from '../components/DateRangePicker';
-import { RelativeTime } from '../components/RelativeTime';
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { Search } from "lucide-react";
+import { api } from "../api/endpoints";
+import { DateRangePicker } from "../components/DateRangePicker";
+import { RelativeTime } from "../components/RelativeTime";
 import {
   EmptyState,
   ErrorState,
   PaginationControls,
   SkeletonTable,
-} from '../components/StateFeedback';
+} from "../components/StateFeedback";
 
 export function AuditLogsPage() {
   const [page, setPage] = useState(1);
-  const [action, setAction] = useState('');
-  const [resourceType, setResourceType] = useState('');
-  const [from, setFrom] = useState('');
-  const [to, setTo] = useState('');
-  const [searchInput, setSearchInput] = useState('');
-  const [search, setSearch] = useState('');
+  const [action, setAction] = useState("");
+  const [resourceType, setResourceType] = useState("");
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
+  const [searchInput, setSearchInput] = useState("");
+  const [search, setSearch] = useState("");
 
   const auditQuery = useQuery({
-    queryKey: ['audit-logs', { page, limit: 20, action, resourceType, from, to, search }],
+    queryKey: [
+      "audit-logs",
+      { page, limit: 20, action, resourceType, from, to, search },
+    ],
     queryFn: () =>
       api.getAuditLogs({
         page,
@@ -42,12 +45,12 @@ export function AuditLogsPage() {
 
   const handleClearFilters = () => {
     setPage(1);
-    setAction('');
-    setResourceType('');
-    setFrom('');
-    setTo('');
-    setSearchInput('');
-    setSearch('');
+    setAction("");
+    setResourceType("");
+    setFrom("");
+    setTo("");
+    setSearchInput("");
+    setSearch("");
   };
 
   return (
@@ -134,12 +137,19 @@ export function AuditLogsPage() {
       {auditQuery.isLoading ? (
         <SkeletonTable rows={6} cols={5} label="Loading audit logs..." />
       ) : auditQuery.isError ? (
-        <ErrorState message={auditQuery.error.message} onRetry={() => auditQuery.refetch()} />
+        <ErrorState
+          message={auditQuery.error.message}
+          onRetry={() => auditQuery.refetch()}
+        />
       ) : !auditQuery.data || auditQuery.data.items.length === 0 ? (
         <EmptyState
           title="No audit events match your filters"
           description="Try broadening the action, resource type, or date filters."
-          actionLabel={action || resourceType || from || to || search ? 'Clear filters' : undefined}
+          actionLabel={
+            action || resourceType || from || to || search
+              ? "Clear filters"
+              : undefined
+          }
           onAction={handleClearFilters}
         />
       ) : (
@@ -157,13 +167,16 @@ export function AuditLogsPage() {
               </thead>
               <tbody className="divide-y divide-slate-100 text-slate-700 dark:divide-slate-800/80 dark:text-slate-200">
                 {auditQuery.data.items.map((log) => (
-                  <tr key={log._id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40">
+                  <tr
+                    key={log._id}
+                    className="hover:bg-slate-50 dark:hover:bg-slate-800/40"
+                  >
                     <td className="px-4 py-3 text-slate-500 dark:text-slate-400">
                       <RelativeTime value={log.createdAt} />
                     </td>
                     <td className="px-4 py-3">
                       <div className="font-medium text-slate-900 dark:text-white">
-                        {log.actorEmail || 'system'}
+                        {log.actorEmail || "system"}
                       </div>
                       <div className="text-[11px] text-slate-500 dark:text-slate-400">
                         {log.actorRole}
@@ -174,17 +187,20 @@ export function AuditLogsPage() {
                     </td>
                     <td className="px-4 py-3 font-mono text-[11px] text-slate-600 dark:text-slate-300">
                       {log.resourceType}
-                      {log.resourceId ? ` (${log.resourceId})` : ''}
+                      {log.resourceId ? ` (${log.resourceId})` : ""}
                     </td>
                     <td className="px-4 py-3 font-mono text-[11px] text-slate-500 dark:text-slate-400">
-                      {log.ipAddress || '—'}
+                      {log.ipAddress || "—"}
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-          <PaginationControls pagination={auditQuery.data.pagination} onPageChange={setPage} />
+          <PaginationControls
+            pagination={auditQuery.data.pagination}
+            onPageChange={setPage}
+          />
         </div>
       )}
     </div>

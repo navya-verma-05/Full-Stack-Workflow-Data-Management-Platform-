@@ -1,33 +1,36 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import { ExternalLink, Search } from 'lucide-react';
-import { api } from '../api/endpoints';
-import { DateRangePicker } from '../components/DateRangePicker';
-import { RelativeTime } from '../components/RelativeTime';
+import { useState } from "react";
+import { Link } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { ExternalLink, Search } from "lucide-react";
+import { api } from "../api/endpoints";
+import { DateRangePicker } from "../components/DateRangePicker";
+import { RelativeTime } from "../components/RelativeTime";
 import {
   EmptyState,
   ErrorState,
   PaginationControls,
   SkeletonTable,
-} from '../components/StateFeedback';
+} from "../components/StateFeedback";
 
 export function RecordsPage() {
   const [page, setPage] = useState(1);
-  const [sourceId, setSourceId] = useState('');
-  const [category, setCategory] = useState('');
-  const [from, setFrom] = useState('');
-  const [to, setTo] = useState('');
-  const [searchInput, setSearchInput] = useState('');
-  const [search, setSearch] = useState('');
+  const [sourceId, setSourceId] = useState("");
+  const [category, setCategory] = useState("");
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
+  const [searchInput, setSearchInput] = useState("");
+  const [search, setSearch] = useState("");
 
   const sourcesQuery = useQuery({
-    queryKey: ['sources', { limit: 100 }],
+    queryKey: ["sources", { limit: 100 }],
     queryFn: () => api.getSources({ limit: 100 }),
   });
 
   const recordsQuery = useQuery({
-    queryKey: ['records', { page, limit: 20, sourceId, category, from, to, search }],
+    queryKey: [
+      "records",
+      { page, limit: 20, sourceId, category, from, to, search },
+    ],
     queryFn: () =>
       api.getRecords({
         page,
@@ -48,12 +51,12 @@ export function RecordsPage() {
 
   const handleClearFilters = () => {
     setPage(1);
-    setSourceId('');
-    setCategory('');
-    setFrom('');
-    setTo('');
-    setSearchInput('');
-    setSearch('');
+    setSourceId("");
+    setCategory("");
+    setFrom("");
+    setTo("");
+    setSearchInput("");
+    setSearch("");
   };
 
   return (
@@ -144,14 +147,25 @@ export function RecordsPage() {
       </div>
 
       {recordsQuery.isLoading ? (
-        <SkeletonTable rows={6} cols={7} label="Loading normalized records..." />
+        <SkeletonTable
+          rows={6}
+          cols={7}
+          label="Loading normalized records..."
+        />
       ) : recordsQuery.isError ? (
-        <ErrorState message={recordsQuery.error.message} onRetry={() => recordsQuery.refetch()} />
+        <ErrorState
+          message={recordsQuery.error.message}
+          onRetry={() => recordsQuery.refetch()}
+        />
       ) : !recordsQuery.data || recordsQuery.data.items.length === 0 ? (
         <EmptyState
           title="No normalized records match these filters"
           description="Adjust your filters or ingest valid events to generate normalized client records."
-          actionLabel={sourceId || category || from || to || search ? 'Clear filters' : undefined}
+          actionLabel={
+            sourceId || category || from || to || search
+              ? "Clear filters"
+              : undefined
+          }
           onAction={handleClearFilters}
         />
       ) : (
@@ -171,26 +185,31 @@ export function RecordsPage() {
               </thead>
               <tbody className="divide-y divide-slate-100 text-slate-700 dark:divide-slate-800/80 dark:text-slate-200">
                 {recordsQuery.data.items.map((rec) => (
-                  <tr key={rec._id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40">
+                  <tr
+                    key={rec._id}
+                    className="hover:bg-slate-50 dark:hover:bg-slate-800/40"
+                  >
                     <td className="px-4 py-3">
                       <div className="font-medium text-slate-900 dark:text-white">
                         {rec.clientName}
                       </div>
                       <div className="text-[11px] text-slate-500 dark:text-slate-400">
-                        {rec.clientEmail || '—'}
+                        {rec.clientEmail || "—"}
                       </div>
                     </td>
                     <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
-                      {rec.company || '—'}
+                      {rec.company || "—"}
                     </td>
                     <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
                       {rec.source?.name || rec.sourceId}
                     </td>
                     <td className="px-4 py-3 font-mono text-[11px] text-slate-600 dark:text-slate-300">
-                      {rec.category || '—'}
+                      {rec.category || "—"}
                     </td>
                     <td className="px-4 py-3 tabular-nums font-medium text-slate-900 dark:text-slate-100">
-                      {rec.amount ? `${rec.amount.toLocaleString()} ${rec.currency || 'USD'}` : '—'}
+                      {rec.amount
+                        ? `${rec.amount.toLocaleString()} ${rec.currency || "USD"}`
+                        : "—"}
                     </td>
                     <td className="px-4 py-3 text-slate-500 dark:text-slate-400">
                       <RelativeTime value={rec.normalizedAt} />
@@ -208,7 +227,10 @@ export function RecordsPage() {
               </tbody>
             </table>
           </div>
-          <PaginationControls pagination={recordsQuery.data.pagination} onPageChange={setPage} />
+          <PaginationControls
+            pagination={recordsQuery.data.pagination}
+            onPageChange={setPage}
+          />
         </div>
       )}
     </div>

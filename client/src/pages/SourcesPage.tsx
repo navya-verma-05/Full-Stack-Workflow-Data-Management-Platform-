@@ -1,31 +1,35 @@
-import { useState } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Copy, KeyRound, Plus, RefreshCw, ShieldAlert } from 'lucide-react';
-import { api } from '../api/endpoints';
-import { useAuth } from '../context/AuthContext';
-import { useToast } from '../context/ToastContext';
-import type { SourceSchemaType } from '../types/api';
-import { RelativeTime } from '../components/RelativeTime';
-import { EmptyState, ErrorState, SkeletonTable } from '../components/StateFeedback';
-import { ActiveBadge } from '../components/StatusBadge';
+import { useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Copy, KeyRound, Plus, RefreshCw, ShieldAlert } from "lucide-react";
+import { api } from "../api/endpoints";
+import { useAuth } from "../context/AuthContext";
+import { useToast } from "../context/ToastContext";
+import type { SourceSchemaType } from "../types/api";
+import { RelativeTime } from "../components/RelativeTime";
+import {
+  EmptyState,
+  ErrorState,
+  SkeletonTable,
+} from "../components/StateFeedback";
+import { ActiveBadge } from "../components/StatusBadge";
 
 const SCHEMA_TYPES: { value: SourceSchemaType; label: string }[] = [
-  { value: 'web_form', label: 'Web Form (web_form)' },
-  { value: 'crm', label: 'CRM Deals (crm)' },
-  { value: 'partner', label: 'Partner Orders (partner)' },
-  { value: 'generic', label: 'Generic Client Payload (generic)' },
+  { value: "web_form", label: "Web Form (web_form)" },
+  { value: "crm", label: "CRM Deals (crm)" },
+  { value: "partner", label: "Partner Orders (partner)" },
+  { value: "generic", label: "Generic Client Payload (generic)" },
 ];
 
 export function SourcesPage() {
   const { user } = useAuth();
   const toast = useToast();
-  const isAdmin = user?.role === 'admin';
+  const isAdmin = user?.role === "admin";
   const queryClient = useQueryClient();
 
   const [showCreateForm, setShowCreateForm] = useState(false);
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
-  const [schemaType, setSchemaType] = useState<SourceSchemaType>('web_form');
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const [schemaType, setSchemaType] = useState<SourceSchemaType>("web_form");
   const [oneTimeSecretBanner, setOneTimeSecretBanner] = useState<{
     sourceName: string;
     apiKey?: string;
@@ -33,28 +37,35 @@ export function SourcesPage() {
   } | null>(null);
 
   const sourcesQuery = useQuery({
-    queryKey: ['sources', { limit: 100 }],
+    queryKey: ["sources", { limit: 100 }],
     queryFn: () => api.getSources({ limit: 100 }),
   });
 
   const createMutation = useMutation({
     mutationFn: () =>
-      api.createSource({ name: name.trim(), description: description.trim(), schemaType }),
+      api.createSource({
+        name: name.trim(),
+        description: description.trim(),
+        schemaType,
+      }),
     onSuccess: (res) => {
       setOneTimeSecretBanner({
         sourceName: res.source.name,
         apiKey: res.credentials.apiKey,
         signingSecret: res.credentials.signingSecret,
       });
-      toast.success('Source created', `${res.source.name} credentials issued once`);
-      setName('');
-      setDescription('');
-      setSchemaType('web_form');
+      toast.success(
+        "Source created",
+        `${res.source.name} credentials issued once`,
+      );
+      setName("");
+      setDescription("");
+      setSchemaType("web_form");
       setShowCreateForm(false);
-      queryClient.invalidateQueries({ queryKey: ['sources'] });
+      queryClient.invalidateQueries({ queryKey: ["sources"] });
     },
     onError: (err) => {
-      toast.error('Failed to create source', (err as Error).message);
+      toast.error("Failed to create source", (err as Error).message);
     },
   });
 
@@ -63,13 +74,13 @@ export function SourcesPage() {
       api.updateSource(id, { active }),
     onSuccess: (res) => {
       toast.success(
-        res.source.active ? 'Source enabled' : 'Source disabled',
-        res.source.name
+        res.source.active ? "Source enabled" : "Source disabled",
+        res.source.name,
       );
-      queryClient.invalidateQueries({ queryKey: ['sources'] });
+      queryClient.invalidateQueries({ queryKey: ["sources"] });
     },
     onError: (err) => {
-      toast.error('Failed to update source', (err as Error).message);
+      toast.error("Failed to update source", (err as Error).message);
     },
   });
 
@@ -80,11 +91,14 @@ export function SourcesPage() {
         sourceName: res.source.name,
         signingSecret: res.signingSecret,
       });
-      toast.success('Signing secret rotated', `Save the new secret for ${res.source.name}`);
-      queryClient.invalidateQueries({ queryKey: ['sources'] });
+      toast.success(
+        "Signing secret rotated",
+        `Save the new secret for ${res.source.name}`,
+      );
+      queryClient.invalidateQueries({ queryKey: ["sources"] });
     },
     onError: (err) => {
-      toast.error('Secret rotation failed', (err as Error).message);
+      toast.error("Secret rotation failed", (err as Error).message);
     },
   });
 
@@ -99,7 +113,7 @@ export function SourcesPage() {
       await navigator.clipboard.writeText(val);
       toast.success(`Copied ${label}`);
     } catch {
-      toast.error('Clipboard unavailable');
+      toast.error("Clipboard unavailable");
     }
   };
 
@@ -111,7 +125,8 @@ export function SourcesPage() {
             Webhook Sources
           </h1>
           <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
-            External systems registered to deliver HMAC-SHA256 signed webhook payloads.
+            External systems registered to deliver HMAC-SHA256 signed webhook
+            payloads.
           </p>
         </div>
         {isAdmin && (
@@ -121,7 +136,7 @@ export function SourcesPage() {
             className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-3.5 py-2 text-xs font-medium text-white shadow-sm hover:bg-indigo-500"
           >
             <Plus className="h-4 w-4" />
-            {showCreateForm ? 'Cancel' : 'New Source'}
+            {showCreateForm ? "Cancel" : "New Source"}
           </button>
         )}
       </div>
@@ -136,17 +151,22 @@ export function SourcesPage() {
             <div className="space-y-2">
               <div className="flex items-center gap-2 font-semibold text-amber-800 dark:text-amber-300">
                 <ShieldAlert className="h-4 w-4" />
-                Save credentials for {oneTimeSecretBanner.sourceName} now — shown once only
+                Save credentials for {oneTimeSecretBanner.sourceName} now —
+                shown once only
               </div>
               {oneTimeSecretBanner.apiKey && (
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-amber-800/80 dark:text-amber-300/80">API Key: </span>
+                  <span className="text-amber-800/80 dark:text-amber-300/80">
+                    API Key:{" "}
+                  </span>
                   <code className="rounded bg-white px-2 py-0.5 font-mono text-amber-900 dark:bg-slate-950 dark:text-amber-200">
                     {oneTimeSecretBanner.apiKey}
                   </code>
                   <button
                     type="button"
-                    onClick={() => copyValue('API Key', oneTimeSecretBanner.apiKey!)}
+                    onClick={() =>
+                      copyValue("API Key", oneTimeSecretBanner.apiKey!)
+                    }
                     className="rounded p-1 hover:bg-amber-200/50 dark:hover:bg-amber-900/50"
                     aria-label="Copy API key"
                   >
@@ -156,14 +176,19 @@ export function SourcesPage() {
               )}
               <div className="flex flex-wrap items-center gap-2">
                 <span className="text-amber-800/80 dark:text-amber-300/80">
-                  HMAC Signing Secret:{' '}
+                  HMAC Signing Secret:{" "}
                 </span>
                 <code className="rounded bg-white px-2 py-0.5 font-mono text-amber-900 dark:bg-slate-950 dark:text-amber-200">
                   {oneTimeSecretBanner.signingSecret}
                 </code>
                 <button
                   type="button"
-                  onClick={() => copyValue('Signing Secret', oneTimeSecretBanner.signingSecret)}
+                  onClick={() =>
+                    copyValue(
+                      "Signing Secret",
+                      oneTimeSecretBanner.signingSecret,
+                    )
+                  }
                   className="rounded p-1 hover:bg-amber-200/50 dark:hover:bg-amber-900/50"
                   aria-label="Copy signing secret"
                 >
@@ -190,7 +215,9 @@ export function SourcesPage() {
           <h2 className="text-sm font-semibold text-slate-900 dark:text-white">
             Create Webhook Source
           </h2>
-          {createMutation.isError && <ErrorState message={(createMutation.error as Error).message} />}
+          {createMutation.isError && (
+            <ErrorState message={(createMutation.error as Error).message} />
+          )}
           <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             <div>
               <label
@@ -219,7 +246,9 @@ export function SourcesPage() {
               <select
                 id="source-schema"
                 value={schemaType}
-                onChange={(e) => setSchemaType(e.target.value as SourceSchemaType)}
+                onChange={(e) =>
+                  setSchemaType(e.target.value as SourceSchemaType)
+                }
                 className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900 focus:border-indigo-500 focus:outline-none dark:border-slate-700 dark:bg-slate-950 dark:text-white"
               >
                 {SCHEMA_TYPES.map((t) => (
@@ -252,16 +281,23 @@ export function SourcesPage() {
               disabled={createMutation.isPending}
               className="rounded-lg bg-indigo-600 px-4 py-2 text-xs font-medium text-white hover:bg-indigo-500 disabled:opacity-60"
             >
-              {createMutation.isPending ? 'Creating...' : 'Create Source'}
+              {createMutation.isPending ? "Creating..." : "Create Source"}
             </button>
           </div>
         </form>
       )}
 
       {sourcesQuery.isLoading ? (
-        <SkeletonTable rows={4} cols={isAdmin ? 7 : 6} label="Loading webhook sources..." />
+        <SkeletonTable
+          rows={4}
+          cols={isAdmin ? 7 : 6}
+          label="Loading webhook sources..."
+        />
       ) : sourcesQuery.isError ? (
-        <ErrorState message={sourcesQuery.error.message} onRetry={() => sourcesQuery.refetch()} />
+        <ErrorState
+          message={sourcesQuery.error.message}
+          onRetry={() => sourcesQuery.refetch()}
+        />
       ) : !sourcesQuery.data || sourcesQuery.data.items.length === 0 ? (
         <EmptyState
           title="No webhook sources registered"
@@ -279,14 +315,21 @@ export function SourcesPage() {
                   <th className="px-4 py-3 font-medium">Status</th>
                   <th className="px-4 py-3 font-medium">Webhook Endpoint</th>
                   <th className="px-4 py-3 font-medium">Secret Rotated</th>
-                  {isAdmin && <th className="px-4 py-3 font-medium">Actions</th>}
+                  {isAdmin && (
+                    <th className="px-4 py-3 font-medium">Actions</th>
+                  )}
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-slate-700 dark:divide-slate-800/80 dark:text-slate-200">
                 {sourcesQuery.data.items.map((src) => (
-                  <tr key={src._id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40">
+                  <tr
+                    key={src._id}
+                    className="hover:bg-slate-50 dark:hover:bg-slate-800/40"
+                  >
                     <td className="px-4 py-3">
-                      <div className="font-medium text-slate-900 dark:text-white">{src.name}</div>
+                      <div className="font-medium text-slate-900 dark:text-white">
+                        {src.name}
+                      </div>
                       {src.description && (
                         <div className="text-[11px] text-slate-500 dark:text-slate-400">
                           {src.description}
@@ -297,7 +340,7 @@ export function SourcesPage() {
                       {src.schemaType}
                     </td>
                     <td className="px-4 py-3 font-mono text-[11px] text-slate-500 dark:text-slate-400">
-                      {src.apiKeyPrefix || '—'}
+                      {src.apiKeyPrefix || "—"}
                     </td>
                     <td className="px-4 py-3">
                       <ActiveBadge active={src.active} />
@@ -323,7 +366,7 @@ export function SourcesPage() {
                             className="inline-flex items-center gap-1 rounded border border-slate-300 bg-white px-2.5 py-1 text-[11px] text-slate-700 hover:bg-slate-50 disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
                           >
                             <RefreshCw className="h-3 w-3" />
-                            {src.active ? 'Disable' : 'Enable'}
+                            {src.active ? "Disable" : "Enable"}
                           </button>
                           <button
                             type="button"

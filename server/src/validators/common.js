@@ -1,9 +1,9 @@
-import { z } from 'zod';
+import { z } from "zod";
 
 export const objectIdSchema = z
   .string()
   .trim()
-  .regex(/^[0-9a-fA-F]{24}$/, 'Invalid MongoDB ObjectId')
+  .regex(/^[0-9a-fA-F]{24}$/, "Invalid MongoDB ObjectId")
   .max(24);
 
 export const boundedString = (minLen, maxLen) =>
@@ -16,7 +16,7 @@ export const emailSchema = z
   .string()
   .trim()
   .toLowerCase()
-  .email('Invalid email address')
+  .email("Invalid email address")
   .max(254);
 
 export const paginationQuerySchema = z
@@ -25,4 +25,3 @@ export const paginationQuerySchema = z
     limit: z.coerce.number().int().min(1).max(100).default(20),
   })
   .strict();
-

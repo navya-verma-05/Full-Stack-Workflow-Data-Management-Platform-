@@ -1,7 +1,7 @@
-import { AlertTriangle, Inbox } from 'lucide-react';
-import type { PaginationMeta } from '../types/api';
+import { AlertTriangle, Inbox } from "lucide-react";
+import type { PaginationMeta } from "../types/api";
 
-export function SkeletonBlock({ className = '' }: { className?: string }) {
+export function SkeletonBlock({ className = "" }: { className?: string }) {
   return (
     <div
       className={`animate-pulse rounded-md bg-slate-200/80 dark:bg-slate-800/80 ${className}`}
@@ -12,7 +12,7 @@ export function SkeletonBlock({ className = '' }: { className?: string }) {
 export function SkeletonTable({
   rows = 6,
   cols = 5,
-  label = 'Loading data...',
+  label = "Loading data...",
 }: {
   rows?: number;
   cols?: number;
@@ -25,7 +25,10 @@ export function SkeletonTable({
       className="overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900/60"
     >
       <div className="border-b border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-800 dark:bg-slate-900/90">
-        <div className="grid gap-4" style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>
+        <div
+          className="grid gap-4"
+          style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
+        >
           {Array.from({ length: cols }).map((_, idx) => (
             <SkeletonBlock key={idx} className="h-3 w-20" />
           ))}
@@ -39,7 +42,10 @@ export function SkeletonTable({
             style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
           >
             {Array.from({ length: cols }).map((__, c) => (
-              <SkeletonBlock key={c} className={c === 0 ? 'h-4 w-3/4' : 'h-4 w-1/2'} />
+              <SkeletonBlock
+                key={c}
+                className={c === 0 ? "h-4 w-3/4" : "h-4 w-1/2"}
+              />
             ))}
           </div>
         ))}
@@ -49,7 +55,11 @@ export function SkeletonTable({
   );
 }
 
-export function SkeletonOverview({ label = 'Loading overview metrics...' }: { label?: string }) {
+export function SkeletonOverview({
+  label = "Loading overview metrics...",
+}: {
+  label?: string;
+}) {
   return (
     <div role="status" aria-label={label} className="space-y-6">
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-6">
@@ -83,7 +93,7 @@ export function SkeletonOverview({ label = 'Loading overview metrics...' }: { la
   );
 }
 
-export function LoadingState({ label = 'Loading...' }: { label?: string }) {
+export function LoadingState({ label = "Loading..." }: { label?: string }) {
   return (
     <div
       role="status"
@@ -114,8 +124,12 @@ export function EmptyState({
       <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-slate-400 dark:border-slate-700 dark:bg-slate-800/80 dark:text-slate-400">
         <Inbox className="h-5 w-5" />
       </div>
-      <p className="text-sm font-semibold text-slate-900 dark:text-slate-200">{title}</p>
-      <p className="mt-1 max-w-md text-xs text-slate-500 dark:text-slate-400">{description}</p>
+      <p className="text-sm font-semibold text-slate-900 dark:text-slate-200">
+        {title}
+      </p>
+      <p className="mt-1 max-w-md text-xs text-slate-500 dark:text-slate-400">
+        {description}
+      </p>
       {actionLabel && onAction && (
         <button
           type="button"
@@ -172,9 +186,18 @@ export function PaginationControls({
   return (
     <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 px-4 py-3 text-xs text-slate-600 dark:border-slate-800 dark:text-slate-400">
       <span>
-        Showing <strong className="font-medium text-slate-900 dark:text-slate-200">{start}</strong>–
-        <strong className="font-medium text-slate-900 dark:text-slate-200">{end}</strong> of{' '}
-        <strong className="font-medium text-slate-900 dark:text-slate-200">{total}</strong>
+        Showing{" "}
+        <strong className="font-medium text-slate-900 dark:text-slate-200">
+          {start}
+        </strong>
+        –
+        <strong className="font-medium text-slate-900 dark:text-slate-200">
+          {end}
+        </strong>{" "}
+        of{" "}
+        <strong className="font-medium text-slate-900 dark:text-slate-200">
+          {total}
+        </strong>
       </span>
       <div className="flex items-center gap-2">
         <button

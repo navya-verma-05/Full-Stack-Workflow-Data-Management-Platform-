@@ -1,17 +1,17 @@
-import { useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowUpRight, Copy, RotateCcw, X } from 'lucide-react';
-import { api } from '../api/endpoints';
-import { useAuth } from '../context/AuthContext';
-import { useToast } from '../context/ToastContext';
-import type { Source, WorkflowEvent } from '../types/api';
-import { formatDateTime } from '../utils/date';
-import { JsonCodeBlock } from './JsonCodeBlock';
-import { RelativeTime } from './RelativeTime';
-import { RetryTimeline } from './RetryTimeline';
-import { ErrorState, LoadingState } from './StateFeedback';
-import { StatusBadge } from './StatusBadge';
+import { useEffect } from "react";
+import { Link } from "react-router-dom";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { ArrowUpRight, Copy, RotateCcw, X } from "lucide-react";
+import { api } from "../api/endpoints";
+import { useAuth } from "../context/AuthContext";
+import { useToast } from "../context/ToastContext";
+import type { Source, WorkflowEvent } from "../types/api";
+import { formatDateTime } from "../utils/date";
+import { JsonCodeBlock } from "./JsonCodeBlock";
+import { RelativeTime } from "./RelativeTime";
+import { RetryTimeline } from "./RetryTimeline";
+import { ErrorState, LoadingState } from "./StateFeedback";
+import { StatusBadge } from "./StatusBadge";
 
 interface EventDrawerProps {
   eventId: string | null;
@@ -19,7 +19,11 @@ interface EventDrawerProps {
   onClose: () => void;
 }
 
-export function EventDrawer({ eventId, initialEvent, onClose }: EventDrawerProps) {
+export function EventDrawer({
+  eventId,
+  initialEvent,
+  onClose,
+}: EventDrawerProps) {
   const { user } = useAuth();
   const toast = useToast();
   const queryClient = useQueryClient();
@@ -27,14 +31,14 @@ export function EventDrawer({ eventId, initialEvent, onClose }: EventDrawerProps
   useEffect(() => {
     if (!eventId) return undefined;
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === "Escape") onClose();
     };
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
   }, [eventId, onClose]);
 
   const detailQuery = useQuery({
-    queryKey: ['event-detail', eventId],
+    queryKey: ["event-detail", eventId],
     queryFn: () => api.getEventDetail(eventId!),
     enabled: Boolean(eventId),
   });
@@ -42,13 +46,16 @@ export function EventDrawer({ eventId, initialEvent, onClose }: EventDrawerProps
   const replayMutation = useMutation({
     mutationFn: () => api.replayEvent(eventId!),
     onSuccess: () => {
-      toast.success('Event queued for replay', `Idempotency key ${event?.idempotencyKey || ''}`);
-      queryClient.invalidateQueries({ queryKey: ['event-detail', eventId] });
-      queryClient.invalidateQueries({ queryKey: ['events'] });
-      queryClient.invalidateQueries({ queryKey: ['metrics-summary'] });
+      toast.success(
+        "Event queued for replay",
+        `Idempotency key ${event?.idempotencyKey || ""}`,
+      );
+      queryClient.invalidateQueries({ queryKey: ["event-detail", eventId] });
+      queryClient.invalidateQueries({ queryKey: ["events"] });
+      queryClient.invalidateQueries({ queryKey: ["metrics-summary"] });
     },
     onError: (err) => {
-      toast.error('Replay failed', (err as Error).message);
+      toast.error("Replay failed", (err as Error).message);
     },
   });
 
@@ -56,22 +63,25 @@ export function EventDrawer({ eventId, initialEvent, onClose }: EventDrawerProps
 
   const event = detailQuery.data?.event || initialEvent;
   const sourceObj =
-    event && typeof event.sourceId === 'object' && event.sourceId !== null
-      ? (event.sourceId as Pick<Source, '_id' | 'name' | 'schemaType' | 'active'>)
+    event && typeof event.sourceId === "object" && event.sourceId !== null
+      ? (event.sourceId as Pick<
+          Source,
+          "_id" | "name" | "schemaType" | "active"
+        >)
       : event?.source || null;
 
   const canReplay =
     Boolean(event) &&
-    (user?.role === 'admin' || user?.role === 'manager') &&
-    (event!.status === 'failed' || event!.status === 'dead_letter');
+    (user?.role === "admin" || user?.role === "manager") &&
+    (event!.status === "failed" || event!.status === "dead_letter");
 
   const handleCopyKey = async () => {
     if (!event) return;
     try {
       await navigator.clipboard.writeText(event.idempotencyKey);
-      toast.success('Copied idempotency key', event.idempotencyKey);
+      toast.success("Copied idempotency key", event.idempotencyKey);
     } catch {
-      toast.error('Clipboard unavailable');
+      toast.error("Clipboard unavailable");
     }
   };
 
@@ -92,7 +102,7 @@ export function EventDrawer({ eventId, initialEvent, onClose }: EventDrawerProps
             <div className="flex flex-wrap items-center gap-2.5">
               {event && <StatusBadge status={event.status} />}
               <span className="text-xs font-medium text-slate-600 dark:text-slate-300">
-                {sourceObj?.name || 'Webhook Event'}
+                {sourceObj?.name || "Webhook Event"}
               </span>
               {event && (
                 <span className="text-xs text-slate-400">
@@ -126,7 +136,7 @@ export function EventDrawer({ eventId, initialEvent, onClose }: EventDrawerProps
                 className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-indigo-500 disabled:opacity-60"
               >
                 <RotateCcw className="h-3.5 w-3.5" />
-                {replayMutation.isPending ? 'Queuing...' : 'Replay'}
+                {replayMutation.isPending ? "Queuing..." : "Replay"}
               </button>
             )}
             <Link
@@ -150,7 +160,10 @@ export function EventDrawer({ eventId, initialEvent, onClose }: EventDrawerProps
           {detailQuery.isLoading && !event ? (
             <LoadingState label="Loading event details..." />
           ) : detailQuery.isError ? (
-            <ErrorState message={detailQuery.error.message} onRetry={() => detailQuery.refetch()} />
+            <ErrorState
+              message={detailQuery.error.message}
+              onRetry={() => detailQuery.refetch()}
+            />
           ) : event ? (
             <>
               <div className="grid grid-cols-2 gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 text-xs dark:border-slate-800 dark:bg-slate-900/50 sm:grid-cols-3">
@@ -161,15 +174,19 @@ export function EventDrawer({ eventId, initialEvent, onClose }: EventDrawerProps
                   </p>
                 </div>
                 <div>
-                  <p className="text-slate-500 dark:text-slate-400">Processed</p>
+                  <p className="text-slate-500 dark:text-slate-400">
+                    Processed
+                  </p>
                   <p className="mt-1 font-medium text-slate-900 dark:text-slate-100">
-                    {event.processedAt ? formatDateTime(event.processedAt) : '—'}
+                    {event.processedAt
+                      ? formatDateTime(event.processedAt)
+                      : "—"}
                   </p>
                 </div>
                 <div>
                   <p className="text-slate-500 dark:text-slate-400">Schema</p>
                   <p className="mt-1 font-mono font-medium text-slate-900 dark:text-slate-100">
-                    {sourceObj?.schemaType || '—'}
+                    {sourceObj?.schemaType || "—"}
                   </p>
                 </div>
               </div>
@@ -183,7 +200,7 @@ export function EventDrawer({ eventId, initialEvent, onClose }: EventDrawerProps
                     {event.errors.map((err, i) => (
                       <li key={`${err.field}-${i}`}>
                         <span className="font-mono text-rose-600 dark:text-rose-300">
-                          {err.field || 'payload'}
+                          {err.field || "payload"}
                         </span>
                         : {err.message}
                       </li>
@@ -212,4 +229,3 @@ export function EventDrawer({ eventId, initialEvent, onClose }: EventDrawerProps
     </div>
   );
 }
-

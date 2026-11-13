@@ -1,8 +1,8 @@
-import { useState } from 'react';
-import { Calendar } from 'lucide-react';
-import { formatShortDate, toIsoDay } from '../utils/date';
+import { useState } from "react";
+import { Calendar } from "lucide-react";
+import { formatShortDate, toIsoDay } from "../utils/date";
 
-type PresetId = 'all' | '24h' | '7d' | '30d' | 'custom';
+type PresetId = "all" | "24h" | "7d" | "30d" | "custom";
 
 interface DateRangePickerProps {
   from: string;
@@ -12,9 +12,9 @@ interface DateRangePickerProps {
   toAriaLabel?: string;
 }
 
-function getPresetBounds(preset: Exclude<PresetId, 'all' | 'custom'>) {
+function getPresetBounds(preset: Exclude<PresetId, "all" | "custom">) {
   const today = new Date();
-  const days = preset === '24h' ? 1 : preset === '7d' ? 6 : 29;
+  const days = preset === "24h" ? 1 : preset === "7d" ? 6 : 29;
   const start = new Date(today.getTime() - days * 86_400_000);
   return {
     from: toIsoDay(start),
@@ -22,33 +22,37 @@ function getPresetBounds(preset: Exclude<PresetId, 'all' | 'custom'>) {
   };
 }
 
-function detectActivePreset(from: string, to: string, customOpen: boolean): PresetId {
-  if (customOpen) return 'custom';
-  if (!from && !to) return 'all';
-  for (const id of ['24h', '7d', '30d'] as const) {
+function detectActivePreset(
+  from: string,
+  to: string,
+  customOpen: boolean,
+): PresetId {
+  if (customOpen) return "custom";
+  if (!from && !to) return "all";
+  for (const id of ["24h", "7d", "30d"] as const) {
     const bounds = getPresetBounds(id);
     if (bounds.from === from && bounds.to === to) return id;
   }
-  return 'custom';
+  return "custom";
 }
 
 export function DateRangePicker({
   from,
   to,
   onChange,
-  fromAriaLabel = 'From date',
-  toAriaLabel = 'To date',
+  fromAriaLabel = "From date",
+  toAriaLabel = "To date",
 }: DateRangePickerProps) {
   const [customOpen, setCustomOpen] = useState(false);
   const activePreset = detectActivePreset(from, to, customOpen);
 
   const handleSelectPreset = (preset: PresetId) => {
-    if (preset === 'all') {
+    if (preset === "all") {
       setCustomOpen(false);
-      onChange({ from: '', to: '' });
+      onChange({ from: "", to: "" });
       return;
     }
-    if (preset === 'custom') {
+    if (preset === "custom") {
       setCustomOpen((prev) => !prev);
       return;
     }
@@ -65,11 +69,11 @@ export function DateRangePicker({
       >
         {(
           [
-            { id: 'all', label: 'All time' },
-            { id: '24h', label: '24h' },
-            { id: '7d', label: '7d' },
-            { id: '30d', label: '30d' },
-            { id: 'custom', label: 'Custom' },
+            { id: "all", label: "All time" },
+            { id: "24h", label: "24h" },
+            { id: "7d", label: "7d" },
+            { id: "30d", label: "30d" },
+            { id: "custom", label: "Custom" },
           ] as const
         ).map((item) => {
           const isActive = activePreset === item.id;
@@ -80,25 +84,25 @@ export function DateRangePicker({
               onClick={() => handleSelectPreset(item.id)}
               className={`inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
                 isActive
-                  ? 'bg-white text-indigo-600 shadow-sm dark:bg-indigo-600 dark:text-white'
-                  : 'text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white'
+                  ? "bg-white text-indigo-600 shadow-sm dark:bg-indigo-600 dark:text-white"
+                  : "text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white"
               }`}
             >
-              {item.id === 'custom' && <Calendar className="h-3 w-3" />}
+              {item.id === "custom" && <Calendar className="h-3 w-3" />}
               {item.label}
             </button>
           );
         })}
       </div>
 
-      {(from || to) && activePreset !== 'custom' && (
+      {(from || to) && activePreset !== "custom" && (
         <span className="text-xs text-slate-600 dark:text-slate-400">
-          {from ? formatShortDate(`${from}T00:00:00Z`) : 'Start'} —{' '}
-          {to ? formatShortDate(`${to}T00:00:00Z`) : 'Today'}
+          {from ? formatShortDate(`${from}T00:00:00Z`) : "Start"} —{" "}
+          {to ? formatShortDate(`${to}T00:00:00Z`) : "Today"}
         </span>
       )}
 
-      {(customOpen || activePreset === 'custom') && (
+      {(customOpen || activePreset === "custom") && (
         <div className="flex flex-wrap items-center gap-2 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 dark:border-slate-700 dark:bg-slate-900">
           <label className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
             From
@@ -123,8 +127,8 @@ export function DateRangePicker({
           </label>
           {(from || to) && (
             <span className="hidden text-[11px] text-slate-500 dark:text-slate-400 sm:inline">
-              ({from ? formatShortDate(`${from}T00:00:00Z`) : '…'} –{' '}
-              {to ? formatShortDate(`${to}T00:00:00Z`) : '…'})
+              ({from ? formatShortDate(`${from}T00:00:00Z`) : "…"} –{" "}
+              {to ? formatShortDate(`${to}T00:00:00Z`) : "…"})
             </span>
           )}
         </div>
@@ -132,4 +136,3 @@ export function DateRangePicker({
     </div>
   );
 }
-

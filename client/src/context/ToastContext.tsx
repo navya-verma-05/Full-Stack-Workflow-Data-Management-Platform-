@@ -6,10 +6,10 @@ import {
   useMemo,
   useRef,
   useState,
-} from 'react';
-import { AlertCircle, CheckCircle2, Info, X } from 'lucide-react';
+} from "react";
+import { AlertCircle, CheckCircle2, Info, X } from "lucide-react";
 
-type ToastVariant = 'success' | 'error' | 'info';
+type ToastVariant = "success" | "error" | "info";
 
 interface ToastItem {
   id: number;
@@ -38,22 +38,25 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   const push = useCallback(
     (variant: ToastVariant, title: string, description?: string) => {
       const id = nextId.current++;
-      setToasts((prev) => [...prev.slice(-3), { id, variant, title, description }]);
+      setToasts((prev) => [
+        ...prev.slice(-3),
+        { id, variant, title, description },
+      ]);
       window.setTimeout(() => {
         dismiss(id);
       }, 4200);
     },
-    [dismiss]
+    [dismiss],
   );
 
   const value = useMemo<ToastContextValue>(
     () => ({
-      success: (title, description) => push('success', title, description),
-      error: (title, description) => push('error', title, description),
-      info: (title, description) => push('info', title, description),
+      success: (title, description) => push("success", title, description),
+      error: (title, description) => push("error", title, description),
+      info: (title, description) => push("info", title, description),
       dismiss,
     }),
-    [push, dismiss]
+    [push, dismiss],
   );
 
   return (
@@ -66,25 +69,25 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       >
         {toasts.map((item) => {
           const styles =
-            item.variant === 'success'
-              ? 'border-emerald-500/40 bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-100'
-              : item.variant === 'error'
-                ? 'border-rose-500/40 bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-100'
-                : 'border-indigo-500/40 bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-100';
+            item.variant === "success"
+              ? "border-emerald-500/40 bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-100"
+              : item.variant === "error"
+                ? "border-rose-500/40 bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-100"
+                : "border-indigo-500/40 bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-100";
 
           const Icon =
-            item.variant === 'success'
+            item.variant === "success"
               ? CheckCircle2
-              : item.variant === 'error'
+              : item.variant === "error"
                 ? AlertCircle
                 : Info;
 
           const iconColor =
-            item.variant === 'success'
-              ? 'text-emerald-500'
-              : item.variant === 'error'
-                ? 'text-rose-500'
-                : 'text-indigo-500';
+            item.variant === "success"
+              ? "text-emerald-500"
+              : item.variant === "error"
+                ? "text-rose-500"
+                : "text-indigo-500";
 
           return (
             <div
@@ -120,8 +123,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 export function useToast() {
   const ctx = useContext(ToastContext);
   if (!ctx) {
-    throw new Error('useToast must be used inside ToastProvider');
+    throw new Error("useToast must be used inside ToastProvider");
   }
   return ctx;
 }
-

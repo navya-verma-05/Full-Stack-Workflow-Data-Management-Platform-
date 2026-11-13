@@ -1,5 +1,5 @@
 export function escapeRegex(value) {
-  return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 export function parseDateRange(from, to) {
@@ -26,4 +26,3 @@ export function buildPaginationMeta(page, limit, total) {
     totalPages: Math.ceil(total / limit) || 1,
   };
 }
-

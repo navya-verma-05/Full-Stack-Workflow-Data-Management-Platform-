@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { useEffect, useState } from "react";
+import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
   Activity,
   BarChart3,
@@ -16,22 +16,22 @@ import {
   Users,
   Webhook,
   X,
-} from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
-import { useTheme } from '../context/ThemeContext';
-import { useToast } from '../context/ToastContext';
-import { CommandPalette } from './CommandPalette';
-import { RoleBadge } from './StatusBadge';
+} from "lucide-react";
+import { useAuth } from "../context/AuthContext";
+import { useTheme } from "../context/ThemeContext";
+import { useToast } from "../context/ToastContext";
+import { CommandPalette } from "./CommandPalette";
+import { RoleBadge } from "./StatusBadge";
 
 function getPageTitle(pathname: string): string {
-  if (pathname === '/') return 'Overview';
-  if (pathname.startsWith('/events/')) return 'Event Detail';
-  if (pathname.startsWith('/events')) return 'Events';
-  if (pathname.startsWith('/records')) return 'Records';
-  if (pathname.startsWith('/sources')) return 'Sources';
-  if (pathname.startsWith('/users')) return 'Users';
-  if (pathname.startsWith('/audit-logs')) return 'Audit Log';
-  return 'Dashboard';
+  if (pathname === "/") return "Overview";
+  if (pathname.startsWith("/events/")) return "Event Detail";
+  if (pathname.startsWith("/events")) return "Events";
+  if (pathname.startsWith("/records")) return "Records";
+  if (pathname.startsWith("/sources")) return "Sources";
+  if (pathname.startsWith("/users")) return "Users";
+  if (pathname.startsWith("/audit-logs")) return "Audit Log";
+  return "Dashboard";
 }
 
 export function Layout() {
@@ -53,32 +53,32 @@ export function Layout() {
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();
         setPaletteOpen((prev) => !prev);
       }
     };
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
 
   const navItems = [
-    { to: '/', label: 'Overview', icon: BarChart3, end: true },
-    { to: '/events', label: 'Events', icon: Activity },
-    { to: '/records', label: 'Records', icon: FileCheck2 },
-    { to: '/sources', label: 'Sources', icon: Webhook },
-    ...(user?.role === 'admin'
+    { to: "/", label: "Overview", icon: BarChart3, end: true },
+    { to: "/events", label: "Events", icon: Activity },
+    { to: "/records", label: "Records", icon: FileCheck2 },
+    { to: "/sources", label: "Sources", icon: Webhook },
+    ...(user?.role === "admin"
       ? [
-          { to: '/users', label: 'Users', icon: Users },
-          { to: '/audit-logs', label: 'Audit Log', icon: ShieldCheck },
+          { to: "/users", label: "Users", icon: Users },
+          { to: "/audit-logs", label: "Audit Log", icon: ShieldCheck },
         ]
       : []),
   ];
 
   const handleLogout = async () => {
     await logout();
-    toast.info('Signed out');
-    navigate('/login', { replace: true });
+    toast.info("Signed out");
+    navigate("/login", { replace: true });
   };
 
   const renderNavLinks = (collapsed = false, onNavigate?: () => void) => (
@@ -93,10 +93,10 @@ export function Layout() {
             title={collapsed ? item.label : undefined}
             onClick={onNavigate}
             className={({ isActive }) =>
-              `flex items-center ${collapsed ? 'justify-center px-2' : 'gap-3 px-3'} rounded-lg py-2 text-sm font-medium transition-colors ${
+              `flex items-center ${collapsed ? "justify-center px-2" : "gap-3 px-3"} rounded-lg py-2 text-sm font-medium transition-colors ${
                 isActive
-                  ? 'border border-indigo-500/30 bg-indigo-50 text-indigo-700 dark:bg-indigo-600/20 dark:text-indigo-300'
-                  : 'border border-transparent text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800/70 dark:hover:text-white'
+                  ? "border border-indigo-500/30 bg-indigo-50 text-indigo-700 dark:bg-indigo-600/20 dark:text-indigo-300"
+                  : "border border-transparent text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800/70 dark:hover:text-white"
               }`
             }
           >
@@ -113,12 +113,12 @@ export function Layout() {
       {/* Desktop sidebar */}
       <aside
         className={`hidden shrink-0 flex-col border-r border-slate-200 bg-white p-3.5 transition-all duration-200 dark:border-slate-800 dark:bg-slate-900/70 lg:flex ${
-          sidebarCollapsed ? 'w-[72px]' : 'w-64'
+          sidebarCollapsed ? "w-[72px]" : "w-64"
         }`}
       >
         <div
           className={`mb-6 flex items-center ${
-            sidebarCollapsed ? 'justify-center' : 'justify-between px-1.5'
+            sidebarCollapsed ? "justify-center" : "justify-between px-1.5"
           }`}
         >
           <div className="flex items-center gap-2.5 overflow-hidden">
@@ -181,7 +181,7 @@ export function Layout() {
             <button
               type="button"
               onClick={handleLogout}
-              title={sidebarCollapsed ? 'Sign out' : undefined}
+              title={sidebarCollapsed ? "Sign out" : undefined}
               className="flex w-full items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 transition-colors hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-200 dark:hover:bg-slate-800"
             >
               <LogOut className="h-3.5 w-3.5 shrink-0" />
@@ -201,7 +201,11 @@ export function Layout() {
               onClick={() => setMobileOpen((prev) => !prev)}
               className="rounded-lg border border-slate-200 p-1.5 text-slate-600 dark:border-slate-700 dark:text-slate-300 lg:hidden"
             >
-              {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+              {mobileOpen ? (
+                <X className="h-5 w-5" />
+              ) : (
+                <Menu className="h-5 w-5" />
+              )}
             </button>
             <span className="text-sm font-semibold text-slate-800 dark:text-slate-200">
               {pageTitle}
@@ -225,11 +229,15 @@ export function Layout() {
             <button
               type="button"
               onClick={toggleTheme}
-              aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}
-              title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}
+              aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}
+              title={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}
               className="rounded-lg border border-slate-200 bg-white p-1.5 text-slate-600 transition-colors hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
             >
-              {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+              {theme === "dark" ? (
+                <Sun className="h-4 w-4" />
+              ) : (
+                <Moon className="h-4 w-4" />
+              )}
             </button>
           </div>
         </header>
@@ -241,7 +249,9 @@ export function Layout() {
             {user && (
               <div className="mt-4 flex items-center justify-between border-t border-slate-200 pt-3 dark:border-slate-800">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-slate-600 dark:text-slate-300">{user.email}</span>
+                  <span className="text-xs text-slate-600 dark:text-slate-300">
+                    {user.email}
+                  </span>
                   <RoleBadge role={user.role} />
                 </div>
                 <button
@@ -261,7 +271,10 @@ export function Layout() {
         </main>
       </div>
 
-      <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
+      <CommandPalette
+        open={paletteOpen}
+        onClose={() => setPaletteOpen(false)}
+      />
     </div>
   );
 }

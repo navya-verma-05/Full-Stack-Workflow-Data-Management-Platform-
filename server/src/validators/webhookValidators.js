@@ -1,23 +1,26 @@
-import { z } from 'zod';
-import { boundedString, emailSchema, objectIdSchema } from './common.js';
+import { z } from "zod";
+import { boundedString, emailSchema, objectIdSchema } from "./common.js";
 
 export const webhookMetadataSchema = z
   .record(
     z.string().trim().min(1).max(64),
-    z.union([z.string().max(500), z.number().finite(), z.boolean()])
+    z.union([z.string().max(500), z.number().finite(), z.boolean()]),
   )
   .refine((obj) => Object.keys(obj).length <= 25, {
-    message: 'Metadata cannot exceed 25 keys',
+    message: "Metadata cannot exceed 25 keys",
   });
 
 export const baseWebhookHeadersSchema = z.object({
-  'x-webhook-signature': z.string().trim().min(1).max(256),
-  'x-webhook-timestamp': z
+  "x-webhook-signature": z.string().trim().min(1).max(256),
+  "x-webhook-timestamp": z
     .string()
     .trim()
-    .regex(/^\d{1,15}$/, 'x-webhook-timestamp must be a Unix epoch timestamp in seconds')
+    .regex(
+      /^\d{1,15}$/,
+      "x-webhook-timestamp must be a Unix epoch timestamp in seconds",
+    )
     .max(32),
-  'x-idempotency-key': z.string().trim().min(1).max(256),
+  "x-idempotency-key": z.string().trim().min(1).max(256),
 });
 
 export const webhookParamsSchema = {
@@ -64,7 +67,7 @@ export const crmWebhookPayloadSchema = z
     accountName: boundedString(1, 160).optional(),
     stage: boundedString(1, 64),
     dealValue: z.number().finite().min(0).max(1e9),
-    currency: boundedString(3, 8).default('USD'),
+    currency: boundedString(3, 8).default("USD"),
     tags: z.array(boundedString(1, 48)).max(20).optional(),
   })
   .strict();
@@ -87,11 +90,11 @@ export const partnerWebhookPayloadSchema = z
             quantity: z.number().int().min(1).max(100000),
             unitPrice: z.number().finite().min(0).max(1e7),
           })
-          .strict()
+          .strict(),
       )
       .min(1)
       .max(100),
-    currency: boundedString(3, 8).default('USD'),
+    currency: boundedString(3, 8).default("USD"),
   })
   .strict();
 

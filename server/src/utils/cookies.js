@@ -1,6 +1,6 @@
-import { env } from '../config/env.js';
+import { env } from "../config/env.js";
 
-export const REFRESH_COOKIE_NAME = 'refreshToken';
+export const REFRESH_COOKIE_NAME = "refreshToken";
 
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 
@@ -9,7 +9,7 @@ export function getRefreshCookieOptions() {
     httpOnly: true,
     secure: env.COOKIE_SECURE,
     sameSite: env.COOKIE_SAME_SITE,
-    path: '/api/auth',
+    path: "/api/auth",
     maxAge: SEVEN_DAYS_MS,
   };
 }
@@ -19,7 +19,7 @@ export function setRefreshCookie(res, token) {
 }
 
 export function clearRefreshCookie(res) {
-  const { maxAge: _maxAge, ...clearOpts } = getRefreshCookieOptions();
-  res.clearCookie(REFRESH_COOKIE_NAME, clearOpts);
+  const opts = getRefreshCookieOptions();
+  delete opts.maxAge;
+  res.clearCookie(REFRESH_COOKIE_NAME, opts);
 }
-

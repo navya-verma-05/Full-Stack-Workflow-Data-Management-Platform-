@@ -1,5 +1,5 @@
-import { FormEvent, useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { FormEvent, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   ArrowRight,
   CheckCircle2,
@@ -11,18 +11,43 @@ import {
   ShieldCheck,
   Sun,
   Webhook,
-} from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
-import { useTheme } from '../context/ThemeContext';
-import { useToast } from '../context/ToastContext';
-import { ApiError } from '../api/http';
+} from "lucide-react";
+import { useAuth } from "../context/AuthContext";
+import { useTheme } from "../context/ThemeContext";
+import { useToast } from "../context/ToastContext";
+import { ApiError } from "../api/http";
 
 const PIPELINE_STEPS = [
-  { label: 'Source', sub: 'Web, CRM, Partner', icon: Webhook, tone: 'bg-sky-500/15 text-sky-600 dark:text-sky-300 border-sky-500/30' },
-  { label: 'Verify', sub: 'HMAC + Replay guard', icon: ShieldCheck, tone: 'bg-indigo-500/15 text-indigo-600 dark:text-indigo-300 border-indigo-500/30' },
-  { label: 'Validate', sub: 'Per-source schema', icon: CheckCircle2, tone: 'bg-violet-500/15 text-violet-600 dark:text-violet-300 border-violet-500/30' },
-  { label: 'Queue', sub: 'Backoff & DLQ', icon: RefreshCw, tone: 'bg-amber-500/15 text-amber-600 dark:text-amber-300 border-amber-500/30' },
-  { label: 'Records', sub: 'Normalized output', icon: FileCheck2, tone: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-300 border-emerald-500/30' },
+  {
+    label: "Source",
+    sub: "Web, CRM, Partner",
+    icon: Webhook,
+    tone: "bg-sky-500/15 text-sky-600 dark:text-sky-300 border-sky-500/30",
+  },
+  {
+    label: "Verify",
+    sub: "HMAC + Replay guard",
+    icon: ShieldCheck,
+    tone: "bg-indigo-500/15 text-indigo-600 dark:text-indigo-300 border-indigo-500/30",
+  },
+  {
+    label: "Validate",
+    sub: "Per-source schema",
+    icon: CheckCircle2,
+    tone: "bg-violet-500/15 text-violet-600 dark:text-violet-300 border-violet-500/30",
+  },
+  {
+    label: "Queue",
+    sub: "Backoff & DLQ",
+    icon: RefreshCw,
+    tone: "bg-amber-500/15 text-amber-600 dark:text-amber-300 border-amber-500/30",
+  },
+  {
+    label: "Records",
+    sub: "Normalized output",
+    icon: FileCheck2,
+    tone: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-300 border-emerald-500/30",
+  },
 ];
 
 export function LoginPage() {
@@ -31,18 +56,18 @@ export function LoginPage() {
   const toast = useToast();
   const navigate = useNavigate();
 
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    document.title = 'Sign in · Workflow Platform';
+    document.title = "Sign in · Workflow Platform";
   }, []);
 
   useEffect(() => {
     if (user) {
-      navigate('/', { replace: true });
+      navigate("/", { replace: true });
     }
   }, [user, navigate]);
 
@@ -52,13 +77,13 @@ export function LoginPage() {
     setSubmitting(true);
     try {
       const signedIn = await login(email.trim(), password);
-      toast.success('Welcome back', `${signedIn.name} (${signedIn.role})`);
-      navigate('/', { replace: true });
+      toast.success("Welcome back", `${signedIn.name} (${signedIn.role})`);
+      navigate("/", { replace: true });
     } catch (err) {
       if (err instanceof ApiError) {
         setError(err.message);
       } else {
-        setError('Unable to reach authentication service');
+        setError("Unable to reach authentication service");
       }
     } finally {
       setSubmitting(false);
@@ -70,10 +95,14 @@ export function LoginPage() {
       <button
         type="button"
         onClick={toggleTheme}
-        aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}
+        aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}
         className="absolute right-4 top-4 z-10 rounded-lg border border-slate-200 bg-white p-2 text-slate-600 shadow-sm hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
       >
-        {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+        {theme === "dark" ? (
+          <Sun className="h-4 w-4" />
+        ) : (
+          <Moon className="h-4 w-4" />
+        )}
       </button>
 
       <div className="mx-auto grid w-full max-w-6xl grid-cols-1 items-center gap-10 px-6 py-12 lg:grid-cols-12">
@@ -89,9 +118,10 @@ export function LoginPage() {
               Every inbound webhook verified, normalized, and observable.
             </h1>
             <p className="max-w-xl text-sm leading-relaxed text-slate-600 dark:text-slate-400">
-              Workflow Platform ingests signed payloads across web forms, CRMs, and partner feeds,
-              enforces per-source Zod schemas and idempotency keys, retries transient failures with
-              exponential backoff, and gives your team full audit telemetry.
+              Workflow Platform ingests signed payloads across web forms, CRMs,
+              and partner feeds, enforces per-source Zod schemas and idempotency
+              keys, retries transient failures with exponential backoff, and
+              gives your team full audit telemetry.
             </p>
           </div>
 
@@ -104,7 +134,10 @@ export function LoginPage() {
               {PIPELINE_STEPS.map((step, index) => {
                 const Icon = step.icon;
                 return (
-                  <div key={step.label} className="flex flex-1 items-center gap-2">
+                  <div
+                    key={step.label}
+                    className="flex flex-1 items-center gap-2"
+                  >
                     <div className="flex-1 rounded-xl border border-slate-200 bg-slate-50 p-3 text-center dark:border-slate-800 dark:bg-slate-950/70">
                       <div
                         className={`mx-auto mb-2 flex h-8 w-8 items-center justify-center rounded-lg border ${step.tone}`}
@@ -132,17 +165,27 @@ export function LoginPage() {
               <p className="font-semibold text-slate-900 dark:text-slate-200">
                 Constant-Time HMAC
               </p>
-              <p className="mt-1">Raw-body SHA-256 verification and replay-window enforcement.</p>
+              <p className="mt-1">
+                Raw-body SHA-256 verification and replay-window enforcement.
+              </p>
             </div>
             <div className="rounded-xl border border-slate-200 bg-white/80 p-3.5 dark:border-slate-800/80 dark:bg-slate-900/40">
               <p className="font-semibold text-slate-900 dark:text-slate-200">
                 Atomic Retry Worker
               </p>
-              <p className="mt-1">Exponential backoff scheduling with automatic dead-letter replay.</p>
+              <p className="mt-1">
+                Exponential backoff scheduling with automatic dead-letter
+                replay.
+              </p>
             </div>
             <div className="rounded-xl border border-slate-200 bg-white/80 p-3.5 dark:border-slate-800/80 dark:bg-slate-900/40">
-              <p className="font-semibold text-slate-900 dark:text-slate-200">Strict RBAC</p>
-              <p className="mt-1">In-memory access tokens, httpOnly refresh cookies, and audit trails.</p>
+              <p className="font-semibold text-slate-900 dark:text-slate-200">
+                Strict RBAC
+              </p>
+              <p className="mt-1">
+                In-memory access tokens, httpOnly refresh cookies, and audit
+                trails.
+              </p>
             </div>
           </div>
         </section>
@@ -218,12 +261,13 @@ export function LoginPage() {
                 className="flex w-full items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <Lock className="h-4 w-4" />
-                {submitting ? 'Signing in...' : 'Sign in'}
+                {submitting ? "Signing in..." : "Sign in"}
               </button>
             </form>
 
             <p className="mt-5 text-center text-[11px] text-slate-500 dark:text-slate-400">
-              Access tokens are kept strictly in memory with httpOnly refresh cookies.
+              Access tokens are kept strictly in memory with httpOnly refresh
+              cookies.
             </p>
           </div>
         </section>

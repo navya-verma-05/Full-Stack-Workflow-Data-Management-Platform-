@@ -1,14 +1,24 @@
-import { AlertTriangle, CheckCircle2, Clock, RefreshCw, XCircle } from 'lucide-react';
-import type { WorkflowEvent } from '../types/api';
-import { formatDateTime, formatDurationMs } from '../utils/date';
-import { RelativeTime } from './RelativeTime';
+import {
+  AlertTriangle,
+  CheckCircle2,
+  Clock,
+  RefreshCw,
+  XCircle,
+} from "lucide-react";
+import type { WorkflowEvent } from "../types/api";
+import { formatDateTime, formatDurationMs } from "../utils/date";
+import { RelativeTime } from "./RelativeTime";
 
 interface RetryTimelineProps {
   event: WorkflowEvent;
   baseDelayMs?: number;
 }
 
-function parseBackoffMsFromLog(message: string, attemptNumber: number, baseDelayMs: number): number | null {
+function parseBackoffMsFromLog(
+  message: string,
+  attemptNumber: number,
+  baseDelayMs: number,
+): number | null {
   const match = message.match(/retry scheduled in (\d+)ms/i);
   if (match) {
     return Number(match[1]);
@@ -19,14 +29,17 @@ function parseBackoffMsFromLog(message: string, attemptNumber: number, baseDelay
   return null;
 }
 
-export function RetryTimeline({ event, baseDelayMs = 1000 }: RetryTimelineProps) {
+export function RetryTimeline({
+  event,
+  baseDelayMs = 1000,
+}: RetryTimelineProps) {
   let retryAttemptCounter = 0;
 
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-600 dark:text-slate-400">
         <span>
-          Attempts:{' '}
+          Attempts:{" "}
           <strong className="font-semibold text-slate-900 dark:text-white">
             {event.attempts} / {event.maxAttempts}
           </strong>
@@ -34,7 +47,8 @@ export function RetryTimeline({ event, baseDelayMs = 1000 }: RetryTimelineProps)
         {event.nextRetryAt && (
           <span className="inline-flex items-center gap-1.5 rounded-full border border-orange-500/30 bg-orange-500/10 px-2.5 py-0.5 text-[11px] font-medium text-orange-700 dark:text-orange-300">
             <Clock className="h-3 w-3" />
-            Next retry <RelativeTime value={event.nextRetryAt} /> ({formatDateTime(event.nextRetryAt)})
+            Next retry <RelativeTime value={event.nextRetryAt} /> (
+            {formatDateTime(event.nextRetryAt)})
           </span>
         )}
         {event.deadLetteredAt && (
@@ -46,29 +60,35 @@ export function RetryTimeline({ event, baseDelayMs = 1000 }: RetryTimelineProps)
       </div>
 
       {event.processingLogs.length === 0 ? (
-        <p className="text-xs text-slate-500 dark:text-slate-400">No processing logs recorded yet.</p>
+        <p className="text-xs text-slate-500 dark:text-slate-400">
+          No processing logs recorded yet.
+        </p>
       ) : (
         <ol className="relative ml-2.5 space-y-4 border-l border-slate-200 pl-5 dark:border-slate-800">
           {event.processingLogs.map((log, idx) => {
-            const isRetry = log.stage === 'retry';
+            const isRetry = log.stage === "retry";
             if (isRetry) retryAttemptCounter += 1;
             const backoffMs = isRetry
-              ? parseBackoffMsFromLog(log.message, retryAttemptCounter, baseDelayMs)
+              ? parseBackoffMsFromLog(
+                  log.message,
+                  retryAttemptCounter,
+                  baseDelayMs,
+                )
               : null;
 
             const iconWrap =
-              log.level === 'error'
-                ? 'border-rose-500/40 bg-rose-50 text-rose-600 dark:bg-rose-950 dark:text-rose-400'
-                : log.level === 'warn'
-                  ? 'border-amber-500/40 bg-amber-50 text-amber-600 dark:bg-amber-950 dark:text-amber-400'
-                  : 'border-emerald-500/40 bg-emerald-50 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-400';
+              log.level === "error"
+                ? "border-rose-500/40 bg-rose-50 text-rose-600 dark:bg-rose-950 dark:text-rose-400"
+                : log.level === "warn"
+                  ? "border-amber-500/40 bg-amber-50 text-amber-600 dark:bg-amber-950 dark:text-amber-400"
+                  : "border-emerald-500/40 bg-emerald-50 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-400";
 
             const StageIcon =
-              log.level === 'error'
+              log.level === "error"
                 ? XCircle
                 : isRetry
                   ? RefreshCw
-                  : log.level === 'warn'
+                  : log.level === "warn"
                     ? AlertTriangle
                     : CheckCircle2;
 
@@ -93,10 +113,13 @@ export function RetryTimeline({ event, baseDelayMs = 1000 }: RetryTimelineProps)
                       )}
                     </div>
                     <span className="text-[11px] text-slate-500 dark:text-slate-400">
-                      <RelativeTime value={log.timestamp} /> · {formatDateTime(log.timestamp)}
+                      <RelativeTime value={log.timestamp} /> ·{" "}
+                      {formatDateTime(log.timestamp)}
                     </span>
                   </div>
-                  <p className="mt-1.5 text-xs text-slate-700 dark:text-slate-300">{log.message}</p>
+                  <p className="mt-1.5 text-xs text-slate-700 dark:text-slate-300">
+                    {log.message}
+                  </p>
                 </div>
               </li>
             );
@@ -106,4 +129,3 @@ export function RetryTimeline({ event, baseDelayMs = 1000 }: RetryTimelineProps)
     </div>
   );
 }
-

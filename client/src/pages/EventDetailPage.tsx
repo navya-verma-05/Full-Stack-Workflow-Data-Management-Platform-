@@ -1,25 +1,25 @@
-import { Link, useParams } from 'react-router-dom';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, Copy, RotateCcw } from 'lucide-react';
-import { api } from '../api/endpoints';
-import { useAuth } from '../context/AuthContext';
-import { useToast } from '../context/ToastContext';
-import type { NormalizedRecord, Source } from '../types/api';
-import { formatDateTime } from '../utils/date';
-import { JsonCodeBlock } from '../components/JsonCodeBlock';
-import { RelativeTime } from '../components/RelativeTime';
-import { RetryTimeline } from '../components/RetryTimeline';
-import { ErrorState, LoadingState } from '../components/StateFeedback';
-import { StatusBadge } from '../components/StatusBadge';
+import { Link, useParams } from "react-router-dom";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { ArrowLeft, Copy, RotateCcw } from "lucide-react";
+import { api } from "../api/endpoints";
+import { useAuth } from "../context/AuthContext";
+import { useToast } from "../context/ToastContext";
+import type { NormalizedRecord, Source } from "../types/api";
+import { formatDateTime } from "../utils/date";
+import { JsonCodeBlock } from "../components/JsonCodeBlock";
+import { RelativeTime } from "../components/RelativeTime";
+import { RetryTimeline } from "../components/RetryTimeline";
+import { ErrorState, LoadingState } from "../components/StateFeedback";
+import { StatusBadge } from "../components/StatusBadge";
 
 export function EventDetailPage() {
-  const { id = '' } = useParams();
+  const { id = "" } = useParams();
   const { user } = useAuth();
   const toast = useToast();
   const queryClient = useQueryClient();
 
   const detailQuery = useQuery({
-    queryKey: ['event-detail', id],
+    queryKey: ["event-detail", id],
     queryFn: () => api.getEventDetail(id),
     enabled: Boolean(id),
   });
@@ -27,14 +27,14 @@ export function EventDetailPage() {
   const replayMutation = useMutation({
     mutationFn: () => api.replayEvent(id),
     onSuccess: (res) => {
-      toast.success('Event queued for replay', res.event.idempotencyKey);
-      queryClient.invalidateQueries({ queryKey: ['event-detail', id] });
-      queryClient.invalidateQueries({ queryKey: ['events'] });
-      queryClient.invalidateQueries({ queryKey: ['events-needs-attention'] });
-      queryClient.invalidateQueries({ queryKey: ['metrics-summary'] });
+      toast.success("Event queued for replay", res.event.idempotencyKey);
+      queryClient.invalidateQueries({ queryKey: ["event-detail", id] });
+      queryClient.invalidateQueries({ queryKey: ["events"] });
+      queryClient.invalidateQueries({ queryKey: ["events-needs-attention"] });
+      queryClient.invalidateQueries({ queryKey: ["metrics-summary"] });
     },
     onError: (err) => {
-      toast.error('Replay failed', (err as Error).message);
+      toast.error("Replay failed", (err as Error).message);
     },
   });
 
@@ -55,25 +55,28 @@ export function EventDetailPage() {
   if (!event) return null;
 
   const canReplay =
-    (user?.role === 'admin' || user?.role === 'manager') &&
-    (event.status === 'failed' || event.status === 'dead_letter');
+    (user?.role === "admin" || user?.role === "manager") &&
+    (event.status === "failed" || event.status === "dead_letter");
 
   const source =
-    typeof event.sourceId === 'object' && event.sourceId !== null
-      ? (event.sourceId as Pick<Source, '_id' | 'name' | 'schemaType' | 'active'>)
+    typeof event.sourceId === "object" && event.sourceId !== null
+      ? (event.sourceId as Pick<
+          Source,
+          "_id" | "name" | "schemaType" | "active"
+        >)
       : null;
 
   const record =
-    typeof event.recordId === 'object' && event.recordId !== null
+    typeof event.recordId === "object" && event.recordId !== null
       ? (event.recordId as NormalizedRecord)
       : null;
 
   const handleCopyKey = async () => {
     try {
       await navigator.clipboard.writeText(event.idempotencyKey);
-      toast.success('Copied idempotency key', event.idempotencyKey);
+      toast.success("Copied idempotency key", event.idempotencyKey);
     } catch {
-      toast.error('Clipboard unavailable');
+      toast.error("Clipboard unavailable");
     }
   };
 
@@ -119,20 +122,24 @@ export function EventDetailPage() {
             className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-md shadow-indigo-600/20 transition-all hover:bg-indigo-500 disabled:opacity-60"
           >
             <RotateCcw className="h-4 w-4" />
-            {replayMutation.isPending ? 'Queuing replay...' : 'Replay Event'}
+            {replayMutation.isPending ? "Queuing replay..." : "Replay Event"}
           </button>
         )}
       </div>
 
       {/* Metadata summary strip */}
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-        <InfoTile label="Source" value={source?.name || String(event.sourceId)} />
-        <InfoTile label="Schema Type" value={source?.schemaType || '—'} mono />
+        <InfoTile
+          label="Source"
+          value={source?.name || String(event.sourceId)}
+        />
+        <InfoTile label="Schema Type" value={source?.schemaType || "—"} mono />
         <InfoTile
           label="Received"
           value={
             <>
-              <RelativeTime value={event.receivedAt} /> · {formatDateTime(event.receivedAt)}
+              <RelativeTime value={event.receivedAt} /> ·{" "}
+              {formatDateTime(event.receivedAt)}
             </>
           }
         />
@@ -141,10 +148,11 @@ export function EventDetailPage() {
           value={
             event.processedAt ? (
               <>
-                <RelativeTime value={event.processedAt} /> · {formatDateTime(event.processedAt)}
+                <RelativeTime value={event.processedAt} /> ·{" "}
+                {formatDateTime(event.processedAt)}
               </>
             ) : (
-              'Pending / Not processed'
+              "Pending / Not processed"
             )
           }
         />
@@ -160,10 +168,12 @@ export function EventDetailPage() {
             {event.errors.map((err, idx) => (
               <li key={`${err.field}-${idx}`}>
                 <span className="font-mono font-semibold text-rose-600 dark:text-rose-300">
-                  {err.field || 'payload'}
+                  {err.field || "payload"}
                 </span>
-                : {err.message}{' '}
-                <span className="text-rose-500/80 dark:text-rose-300/70">({err.code})</span>
+                : {err.message}{" "}
+                <span className="text-rose-500/80 dark:text-rose-300/70">
+                  ({err.code})
+                </span>
               </li>
             ))}
           </ul>
@@ -191,30 +201,38 @@ export function EventDetailPage() {
               </div>
               <dl className="grid grid-cols-2 gap-3 text-xs">
                 <div>
-                  <dt className="text-emerald-700/80 dark:text-emerald-300/70">Client</dt>
+                  <dt className="text-emerald-700/80 dark:text-emerald-300/70">
+                    Client
+                  </dt>
                   <dd className="mt-0.5 font-semibold text-slate-900 dark:text-white">
                     {record.clientName}
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-emerald-700/80 dark:text-emerald-300/70">Email</dt>
+                  <dt className="text-emerald-700/80 dark:text-emerald-300/70">
+                    Email
+                  </dt>
                   <dd className="mt-0.5 text-slate-800 dark:text-slate-200">
-                    {record.clientEmail || '—'}
+                    {record.clientEmail || "—"}
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-emerald-700/80 dark:text-emerald-300/70">Company</dt>
+                  <dt className="text-emerald-700/80 dark:text-emerald-300/70">
+                    Company
+                  </dt>
                   <dd className="mt-0.5 text-slate-800 dark:text-slate-200">
-                    {record.company || '—'}
+                    {record.company || "—"}
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-emerald-700/80 dark:text-emerald-300/70">Category & Value</dt>
+                  <dt className="text-emerald-700/80 dark:text-emerald-300/70">
+                    Category & Value
+                  </dt>
                   <dd className="mt-0.5 font-mono text-slate-800 dark:text-slate-200">
-                    {record.category || '—'}
+                    {record.category || "—"}
                     {record.amount
-                      ? ` · ${record.amount.toLocaleString()} ${record.currency || 'USD'}`
-                      : ''}
+                      ? ` · ${record.amount.toLocaleString()} ${record.currency || "USD"}`
+                      : ""}
                   </dd>
                 </div>
               </dl>
@@ -233,7 +251,8 @@ export function EventDetailPage() {
               No Normalized Record Created
             </h2>
             <p className="mt-1.5 max-w-sm text-xs text-slate-500 dark:text-slate-400">
-              Records are only created after schema validation passes and worker processing completes.
+              Records are only created after schema validation passes and worker
+              processing completes.
             </p>
           </div>
         )}
@@ -264,7 +283,7 @@ function InfoTile({
       <p className="text-xs text-slate-500 dark:text-slate-400">{label}</p>
       <p
         className={`mt-1 text-xs font-medium text-slate-900 dark:text-slate-100 ${
-          mono ? 'font-mono' : ''
+          mono ? "font-mono" : ""
         }`}
       >
         {value}

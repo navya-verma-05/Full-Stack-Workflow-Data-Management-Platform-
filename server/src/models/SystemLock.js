@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
 const systemLockSchema = new mongoose.Schema(
   {
@@ -12,8 +12,7 @@ const systemLockSchema = new mongoose.Schema(
       required: true,
     },
   },
-  { versionKey: false }
+  { versionKey: false },
 );
 
-export const SystemLock = mongoose.model('SystemLock', systemLockSchema);
-
+export const SystemLock = mongoose.model("SystemLock", systemLockSchema);

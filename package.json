@@ -13,11 +13,14 @@
     "start:server": "npm --prefix server start",
     "build": "npm --prefix client run build",
     "seed": "npm --prefix server run seed",
+    "simulate": "node scripts/simulate-webhooks.js",
+    "simulate:live": "node scripts/simulate-live.js",
     "test:server": "npm --prefix server test",
     "test:client": "npm --prefix client test",
     "test": "npm --prefix server test && npm --prefix client test",
     "lint": "npm --prefix server run lint && npm --prefix client run lint",
-    "format:check": "npm --prefix server run format:check && npm --prefix client run format:check"
+    "format:check": "npm --prefix server run format:check && npm --prefix client run format:check",
+    "format:write": "prettier --write ."
   }
 }
 

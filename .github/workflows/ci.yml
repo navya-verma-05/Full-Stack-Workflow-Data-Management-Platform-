@@ -21,6 +21,8 @@ jobs:
         run: npm --prefix server ci
       - name: Lint server
         run: npm --prefix server run lint
+      - name: Check server formatting
+        run: npm --prefix server run format:check
       - name: Run server tests (Vitest + mongodb-memory-server)
         run: npm --prefix server test
 
@@ -38,6 +40,8 @@ jobs:
         run: npm --prefix client ci
       - name: Lint client
         run: npm --prefix client run lint
+      - name: Check client formatting
+        run: npm --prefix client run format:check
       - name: Run client tests (Vitest + Testing Library)
         run: npm --prefix client test
       - name: Build production bundle

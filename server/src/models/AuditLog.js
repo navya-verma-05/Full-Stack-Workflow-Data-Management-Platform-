@@ -1,23 +1,23 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
 const auditLogSchema = new mongoose.Schema(
   {
     actorId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
+      ref: "User",
       default: null,
     },
     actorEmail: {
       type: String,
       trim: true,
       maxlength: 254,
-      default: 'system',
+      default: "system",
     },
     actorRole: {
       type: String,
       trim: true,
       maxlength: 32,
-      default: 'system',
+      default: "system",
     },
     action: {
       type: String,
@@ -35,7 +35,7 @@ const auditLogSchema = new mongoose.Schema(
       type: String,
       trim: true,
       maxlength: 128,
-      default: '',
+      default: "",
     },
     metadata: {
       type: mongoose.Schema.Types.Mixed,
@@ -45,13 +45,13 @@ const auditLogSchema = new mongoose.Schema(
       type: String,
       trim: true,
       maxlength: 64,
-      default: '',
+      default: "",
     },
     userAgent: {
       type: String,
       trim: true,
       maxlength: 256,
-      default: '',
+      default: "",
     },
     createdAt: {
       type: Date,
@@ -61,7 +61,7 @@ const auditLogSchema = new mongoose.Schema(
   },
   {
     versionKey: false,
-  }
+  },
 );
 
 // Index on createdAt: supports reverse-chronological audit log pagination.
@@ -73,5 +73,4 @@ auditLogSchema.index({ actorId: 1, createdAt: -1 });
 // Compound index on (resourceType, resourceId, createdAt): traces all actions taken on a resource.
 auditLogSchema.index({ resourceType: 1, resourceId: 1, createdAt: -1 });
 
-export const AuditLog = mongoose.model('AuditLog', auditLogSchema);
-
+export const AuditLog = mongoose.model("AuditLog", auditLogSchema);

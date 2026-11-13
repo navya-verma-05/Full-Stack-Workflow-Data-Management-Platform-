@@ -1,22 +1,22 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
 const recordSchema = new mongoose.Schema(
   {
     sourceId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Source',
+      ref: "Source",
       required: true,
     },
     eventId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Event',
+      ref: "Event",
       required: true,
     },
     externalId: {
       type: String,
       trim: true,
       maxlength: 128,
-      default: '',
+      default: "",
     },
     clientName: {
       type: String,
@@ -29,25 +29,25 @@ const recordSchema = new mongoose.Schema(
       trim: true,
       lowercase: true,
       maxlength: 254,
-      default: '',
+      default: "",
     },
     company: {
       type: String,
       trim: true,
       maxlength: 160,
-      default: '',
+      default: "",
     },
     phone: {
       type: String,
       trim: true,
       maxlength: 40,
-      default: '',
+      default: "",
     },
     category: {
       type: String,
       trim: true,
       maxlength: 80,
-      default: 'general',
+      default: "general",
     },
     amount: {
       type: Number,
@@ -58,7 +58,7 @@ const recordSchema = new mongoose.Schema(
       trim: true,
       uppercase: true,
       maxlength: 8,
-      default: 'USD',
+      default: "USD",
     },
     metadata: {
       type: mongoose.Schema.Types.Mixed,
@@ -78,7 +78,7 @@ const recordSchema = new mongoose.Schema(
         return ret;
       },
     },
-  }
+  },
 );
 
 // Unique index on eventId: guarantees a 1-to-1 relationship between a valid Event and its Record.
@@ -92,11 +92,10 @@ recordSchema.index({ clientEmail: 1 });
 
 // Text index across client fields: powers fast server-side text search on normalized records.
 recordSchema.index({
-  clientName: 'text',
-  clientEmail: 'text',
-  company: 'text',
-  externalId: 'text',
+  clientName: "text",
+  clientEmail: "text",
+  company: "text",
+  externalId: "text",
 });
 
-export const RecordModel = mongoose.model('Record', recordSchema);
-
+export const RecordModel = mongoose.model("Record", recordSchema);

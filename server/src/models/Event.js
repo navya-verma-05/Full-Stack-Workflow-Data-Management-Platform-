@@ -1,38 +1,38 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
 export const EVENT_STATUSES = [
-  'received',
-  'valid',
-  'invalid',
-  'processed',
-  'failed',
-  'dead_letter',
+  "received",
+  "valid",
+  "invalid",
+  "processed",
+  "failed",
+  "dead_letter",
 ];
 
 const eventErrorSchema = new mongoose.Schema(
   {
-    field: { type: String, maxlength: 120, default: '' },
+    field: { type: String, maxlength: 120, default: "" },
     message: { type: String, required: true, maxlength: 500 },
-    code: { type: String, maxlength: 64, default: 'VALIDATION_ERROR' },
+    code: { type: String, maxlength: 64, default: "VALIDATION_ERROR" },
   },
-  { _id: false }
+  { _id: false },
 );
 
 const processingLogSchema = new mongoose.Schema(
   {
     timestamp: { type: Date, default: Date.now, required: true },
     stage: { type: String, required: true, maxlength: 64 },
-    level: { type: String, enum: ['info', 'warn', 'error'], default: 'info' },
+    level: { type: String, enum: ["info", "warn", "error"], default: "info" },
     message: { type: String, required: true, maxlength: 500 },
   },
-  { _id: false }
+  { _id: false },
 );
 
 const eventSchema = new mongoose.Schema(
   {
     sourceId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Source',
+      ref: "Source",
       required: true,
     },
     payload: {
@@ -42,7 +42,7 @@ const eventSchema = new mongoose.Schema(
     status: {
       type: String,
       enum: EVENT_STATUSES,
-      default: 'received',
+      default: "received",
       required: true,
     },
     errors: {
@@ -104,7 +104,7 @@ const eventSchema = new mongoose.Schema(
     },
     recordId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Record',
+      ref: "Record",
       default: null,
     },
   },
@@ -117,7 +117,7 @@ const eventSchema = new mongoose.Schema(
         return ret;
       },
     },
-  }
+  },
 );
 
 // Unique compound index on (sourceId, idempotencyKey): enforces idempotent webhook ingestion
@@ -137,5 +137,4 @@ eventSchema.index({ status: 1, nextRetryAt: 1, processingLockUntil: 1 });
 // Single-field descending index on receivedAt: speeds up global chronological pagination and date ranges.
 eventSchema.index({ receivedAt: -1 });
 
-export const Event = mongoose.model('Event', eventSchema);
-
+export const Event = mongoose.model("Event", eventSchema);

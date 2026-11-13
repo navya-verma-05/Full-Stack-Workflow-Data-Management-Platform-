@@ -1,37 +1,37 @@
-import { useState } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Search, UserPlus } from 'lucide-react';
-import { api } from '../api/endpoints';
-import { useToast } from '../context/ToastContext';
-import type { User, UserRole } from '../types/api';
-import { RelativeTime } from '../components/RelativeTime';
+import { useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Search, UserPlus } from "lucide-react";
+import { api } from "../api/endpoints";
+import { useToast } from "../context/ToastContext";
+import type { User, UserRole } from "../types/api";
+import { RelativeTime } from "../components/RelativeTime";
 import {
   EmptyState,
   ErrorState,
   PaginationControls,
   SkeletonTable,
-} from '../components/StateFeedback';
-import { ActiveBadge, RoleBadge } from '../components/StatusBadge';
+} from "../components/StateFeedback";
+import { ActiveBadge, RoleBadge } from "../components/StatusBadge";
 
-const ROLES: UserRole[] = ['admin', 'manager', 'viewer'];
+const ROLES: UserRole[] = ["admin", "manager", "viewer"];
 
 export function UsersPage() {
   const toast = useToast();
   const queryClient = useQueryClient();
 
   const [page, setPage] = useState(1);
-  const [roleFilter, setRoleFilter] = useState<UserRole | ''>('');
-  const [searchInput, setSearchInput] = useState('');
-  const [search, setSearch] = useState('');
+  const [roleFilter, setRoleFilter] = useState<UserRole | "">("");
+  const [searchInput, setSearchInput] = useState("");
+  const [search, setSearch] = useState("");
 
   const [showCreateForm, setShowCreateForm] = useState(false);
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [newRole, setNewRole] = useState<UserRole>('viewer');
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [newRole, setNewRole] = useState<UserRole>("viewer");
 
   const usersQuery = useQuery({
-    queryKey: ['users', { page, limit: 20, role: roleFilter, search }],
+    queryKey: ["users", { page, limit: 20, role: roleFilter, search }],
     queryFn: () => api.getUsers({ page, limit: 20, role: roleFilter, search }),
   });
 
@@ -44,31 +44,36 @@ export function UsersPage() {
         role: newRole,
       }),
     onSuccess: (res) => {
-      toast.success('User provisioned', `${res.user.email} (${res.user.role})`);
-      setName('');
-      setEmail('');
-      setPassword('');
-      setNewRole('viewer');
+      toast.success("User provisioned", `${res.user.email} (${res.user.role})`);
+      setName("");
+      setEmail("");
+      setPassword("");
+      setNewRole("viewer");
       setShowCreateForm(false);
-      queryClient.invalidateQueries({ queryKey: ['users'] });
+      queryClient.invalidateQueries({ queryKey: ["users"] });
     },
     onError: (err) => {
-      toast.error('Failed to create user', (err as Error).message);
+      toast.error("Failed to create user", (err as Error).message);
     },
   });
 
   const updateUserMutation = useMutation({
-    mutationFn: ({ id, payload }: { id: string; payload: { role?: UserRole; active?: boolean } }) =>
-      api.updateUser(id, payload),
+    mutationFn: ({
+      id,
+      payload,
+    }: {
+      id: string;
+      payload: { role?: UserRole; active?: boolean };
+    }) => api.updateUser(id, payload),
     onSuccess: (res) => {
       toast.success(
-        'User updated',
-        `${res.user.email} · ${res.user.role} (${res.user.active ? 'active' : 'disabled'})`
+        "User updated",
+        `${res.user.email} · ${res.user.role} (${res.user.active ? "active" : "disabled"})`,
       );
-      queryClient.invalidateQueries({ queryKey: ['users'] });
+      queryClient.invalidateQueries({ queryKey: ["users"] });
     },
     onError: (err) => {
-      toast.error('Failed to update user', (err as Error).message);
+      toast.error("Failed to update user", (err as Error).message);
     },
   });
 
@@ -85,9 +90,9 @@ export function UsersPage() {
 
   const handleClearFilters = () => {
     setPage(1);
-    setRoleFilter('');
-    setSearchInput('');
-    setSearch('');
+    setRoleFilter("");
+    setSearchInput("");
+    setSearch("");
   };
 
   return (
@@ -98,7 +103,8 @@ export function UsersPage() {
             Team & Roles
           </h1>
           <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
-            Provision accounts and manage RBAC permissions for platform operators.
+            Provision accounts and manage RBAC permissions for platform
+            operators.
           </p>
         </div>
         <button
@@ -107,7 +113,7 @@ export function UsersPage() {
           className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-3.5 py-2 text-xs font-medium text-white shadow-sm hover:bg-indigo-500"
         >
           <UserPlus className="h-4 w-4" />
-          {showCreateForm ? 'Cancel' : 'New User'}
+          {showCreateForm ? "Cancel" : "New User"}
         </button>
       </div>
 
@@ -202,7 +208,9 @@ export function UsersPage() {
               disabled={createUserMutation.isPending}
               className="rounded-lg bg-indigo-600 px-4 py-2 text-xs font-medium text-white hover:bg-indigo-500 disabled:opacity-60"
             >
-              {createUserMutation.isPending ? 'Creating user...' : 'Create User'}
+              {createUserMutation.isPending
+                ? "Creating user..."
+                : "Create User"}
             </button>
           </div>
         </form>
@@ -215,7 +223,7 @@ export function UsersPage() {
             value={roleFilter}
             onChange={(e) => {
               setPage(1);
-              setRoleFilter(e.target.value as UserRole | '');
+              setRoleFilter(e.target.value as UserRole | "");
             }}
             className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-800 focus:border-indigo-500 focus:outline-none dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200"
           >
@@ -227,7 +235,10 @@ export function UsersPage() {
             ))}
           </select>
 
-          <form onSubmit={handleApplySearch} className="flex gap-2 md:col-span-2">
+          <form
+            onSubmit={handleApplySearch}
+            className="flex gap-2 md:col-span-2"
+          >
             <div className="relative flex-1">
               <Search className="pointer-events-none absolute left-2.5 top-2.5 h-3.5 w-3.5 text-slate-400" />
               <input
@@ -261,12 +272,15 @@ export function UsersPage() {
       {usersQuery.isLoading ? (
         <SkeletonTable rows={5} cols={5} label="Loading users..." />
       ) : usersQuery.isError ? (
-        <ErrorState message={usersQuery.error.message} onRetry={() => usersQuery.refetch()} />
+        <ErrorState
+          message={usersQuery.error.message}
+          onRetry={() => usersQuery.refetch()}
+        />
       ) : !usersQuery.data || usersQuery.data.items.length === 0 ? (
         <EmptyState
           title="No users match your filter"
           description="Try clearing the search query or role filter."
-          actionLabel={roleFilter || search ? 'Clear filters' : undefined}
+          actionLabel={roleFilter || search ? "Clear filters" : undefined}
           onAction={handleClearFilters}
         />
       ) : (
@@ -284,10 +298,17 @@ export function UsersPage() {
               </thead>
               <tbody className="divide-y divide-slate-100 text-slate-700 dark:divide-slate-800/80 dark:text-slate-200">
                 {usersQuery.data.items.map((u: User) => (
-                  <tr key={u._id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40">
+                  <tr
+                    key={u._id}
+                    className="hover:bg-slate-50 dark:hover:bg-slate-800/40"
+                  >
                     <td className="px-4 py-3">
-                      <div className="font-medium text-slate-900 dark:text-white">{u.name}</div>
-                      <div className="text-[11px] text-slate-500 dark:text-slate-400">{u.email}</div>
+                      <div className="font-medium text-slate-900 dark:text-white">
+                        {u.name}
+                      </div>
+                      <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                        {u.email}
+                      </div>
                     </td>
                     <td className="px-4 py-3">
                       <RoleBadge role={u.role} />
@@ -329,7 +350,7 @@ export function UsersPage() {
                           }
                           className="rounded border border-slate-300 bg-white px-2.5 py-1 text-[11px] text-slate-700 hover:bg-slate-50 disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
                         >
-                          {u.active ? 'Deactivate' : 'Activate'}
+                          {u.active ? "Deactivate" : "Activate"}
                         </button>
                       </div>
                     </td>
@@ -338,7 +359,10 @@ export function UsersPage() {
               </tbody>
             </table>
           </div>
-          <PaginationControls pagination={usersQuery.data.pagination} onPageChange={setPage} />
+          <PaginationControls
+            pagination={usersQuery.data.pagination}
+            onPageChange={setPage}
+          />
         </div>
       )}
     </div>
