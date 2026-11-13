@@ -5,6 +5,7 @@ import {
   extractDatabaseName,
 } from "../src/utils/dbGuard.js";
 import { runPerformanceBenchmark } from "../../scripts/run-perf.js";
+import { getTestMongoUri } from "./setup.js";
 
 describe("Data Safety & Database Protection Guard", () => {
   it("extracts database name accurately from various MongoDB URI formats", () => {
@@ -68,11 +69,12 @@ describe("Data Safety & Database Protection Guard", () => {
   });
 
   it("runPerformanceBenchmark starts its OWN server instance on a non-4000 port and isolates execution", async () => {
-    const memoryUri =
-      mongoose.connection._connectionString ||
-      mongoose.connection.client?.s?.url;
+    // Explicitly obtain MongoMemoryServer URI from test setup; never fallback to local MongoDB
+    const perfUri = getTestMongoUri("workflow_platform_perf");
+    const initialReadyState = mongoose.connection.readyState;
+
     const res = await runPerformanceBenchmark({
-      mongoUri: "mongodb://127.0.0.1:27017/workflow_platform_perf",
+      mongoUri: perfUri,
       iterations: 3,
       concurrency: 1,
     });
@@ -80,12 +82,12 @@ describe("Data Safety & Database Protection Guard", () => {
     expect(res.database).toBe("workflow_platform_perf");
     expect(typeof res.serverPort).toBe("number");
     expect(res.serverPort).toBeGreaterThan(0);
+    // Verified: binds to ephemeral port, never contacts port 4000
     expect(res.serverPort).not.toBe(4000);
     expect(res.totalRequests).toBe(3);
 
-    // Restore test mongoose connection for suite teardown
-    if (memoryUri) {
-      await mongoose.connect(memoryUri);
-    }
+    // Verified: runPerformanceBenchmark used its own connection and did NOT disconnect or mutate shared test connection
+    expect(mongoose.connection.readyState).toBe(initialReadyState);
+    expect(mongoose.connection.readyState).toBe(1);
   });
 });

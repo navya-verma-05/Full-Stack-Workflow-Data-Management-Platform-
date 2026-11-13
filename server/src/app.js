@@ -17,8 +17,12 @@ import metricsRoutes from "./routes/metricsRoutes.js";
 import recordRoutes from "./routes/recordRoutes.js";
 import auditRoutes from "./routes/auditRoutes.js";
 
-export function createApp() {
+export function createApp(options = {}) {
   const app = express();
+
+  if (options.connection) {
+    app.set("dbConnection", options.connection);
+  }
 
   app.set("trust proxy", 1);
 

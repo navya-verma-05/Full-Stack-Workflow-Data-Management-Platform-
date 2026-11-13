@@ -83,8 +83,21 @@ export function verifyWebhookSignatureAndTimestamp({
   };
 }
 
-export async function ingestWebhook({ sourceId, headers, rawBody, body }) {
-  const source = await Source.findById(sourceId).select(
+export async function ingestWebhook({
+  sourceId,
+  headers,
+  rawBody,
+  body,
+  connection = null,
+}) {
+  const SourceModel =
+    connection?.models?.Source ||
+    (connection ? connection.model("Source", Source.schema) : Source);
+  const EventModel =
+    connection?.models?.Event ||
+    (connection ? connection.model("Event", Event.schema) : Event);
+
+  const source = await SourceModel.findById(sourceId).select(
     "+signingSecretEncrypted",
   );
   if (!source) {
@@ -113,7 +126,7 @@ export async function ingestWebhook({ sourceId, headers, rawBody, body }) {
 
   let event;
   try {
-    event = await Event.create({
+    event = await EventModel.create({
       sourceId: source._id,
       payload: body,
       status: "received",
@@ -132,7 +145,7 @@ export async function ingestWebhook({ sourceId, headers, rawBody, body }) {
     });
   } catch (err) {
     if (err?.code === 11000) {
-      const existing = await Event.findOne({
+      const existing = await EventModel.findOne({
         sourceId: source._id,
         idempotencyKey,
       });
@@ -148,7 +161,7 @@ export async function ingestWebhook({ sourceId, headers, rawBody, body }) {
   const validation = validateWebhookPayload(source.schemaType, body);
 
   if (!validation.valid) {
-    const invalidEvent = await Event.findByIdAndUpdate(
+    const invalidEvent = await EventModel.findByIdAndUpdate(
       event._id,
       {
         $set: {
@@ -174,7 +187,7 @@ export async function ingestWebhook({ sourceId, headers, rawBody, body }) {
     };
   }
 
-  const validEvent = await Event.findByIdAndUpdate(
+  const validEvent = await EventModel.findByIdAndUpdate(
     event._id,
     {
       $set: {

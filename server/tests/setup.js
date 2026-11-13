@@ -31,21 +31,42 @@ import mongoose from "mongoose";
 
 let mongod;
 
+/**
+ * Returns an explicit URI for the isolated in-memory test database.
+ * @param {string} dbName - Target database name (defaults to 'workflow_platform_test')
+ * @returns {string} MongoDB connection URI pointing strictly to MongoMemoryServer
+ */
+export function getTestMongoUri(dbName = "workflow_platform_test") {
+  if (!mongod) {
+    throw new Error(
+      "MongoMemoryServer is not running or has not been initialized yet",
+    );
+  }
+  return mongod.getUri(dbName);
+}
+
 beforeAll(async () => {
   mongod = await MongoMemoryServer.create();
-  const uri = mongod.getUri();
-  await mongoose.connect(uri);
+  const uri = mongod.getUri("workflow_platform_test");
+  process.env.MONGODB_URI = uri;
+  await mongoose.connect(uri, {
+    serverSelectionTimeoutMS: 5000,
+  });
 });
 
 afterEach(async () => {
-  const collections = mongoose.connection.collections;
-  for (const key of Object.keys(collections)) {
-    await collections[key].deleteMany({});
+  if (mongoose.connection.readyState === 1) {
+    const collections = mongoose.connection.collections;
+    for (const key of Object.keys(collections)) {
+      await collections[key].deleteMany({});
+    }
   }
 });
 
 afterAll(async () => {
-  await mongoose.disconnect();
+  if (mongoose.connection.readyState !== 0) {
+    await mongoose.disconnect();
+  }
   if (mongod) {
     await mongod.stop();
   }

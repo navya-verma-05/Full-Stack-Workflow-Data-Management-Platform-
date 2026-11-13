@@ -33,6 +33,16 @@ const TARGET_DB_URI =
   process.env.TEST_MONGODB_URI ||
   'mongodb://127.0.0.1:27017/workflow_platform_perf';
 
+/**
+ * Executes an isolated webhook ingestion benchmark on a dedicated ephemeral port.
+ *
+ * Connection Safety Invariant:
+ * - When given a mongoUri, this function establishes its OWN separate Mongoose Connection
+ *   (via mongoose.createConnection) with a 5000ms serverSelectionTimeoutMS so missing databases
+ *   fail fast with an explicit error instead of hanging on timeouts.
+ * - It NEVER disconnects, mutates, or drops global mongoose.connection or any connection it did not create.
+ * - In its finally block, it drops only its isolated test database and closes only its own connection.
+ */
 export async function runPerformanceBenchmark({
   mongoUri = TARGET_DB_URI,
   iterations = 30,
@@ -41,12 +51,10 @@ export async function runPerformanceBenchmark({
   // CRITICAL GUARD: Ensure we never touch workflow_platform (must end in _perf or _test)
   assertSafeDatabase(mongoUri, 'performance benchmark');
 
-  if (mongoose.connection.readyState !== 0) {
-    await mongoose.disconnect();
-  }
-
-  console.log(`[PERF] Connecting to isolated database: ${mongoUri}`);
-  await mongoose.connect(mongoUri);
+  console.log(`[PERF] Connecting to isolated database via dedicated connection: ${mongoUri}`);
+  const perfConn = await mongoose.createConnection(mongoUri, {
+    serverSelectionTimeoutMS: 5000,
+  }).asPromise();
 
   let tempSourceId;
   const rawSecret = 'perf-secret-32-chars-long-123456';
@@ -54,9 +62,9 @@ export async function runPerformanceBenchmark({
   let serverPort = null;
 
   try {
-    // 1. Prepare isolated source collection
-    const sourcesCol = mongoose.connection.collection('sources');
-    const eventsCol = mongoose.connection.collection('events');
+    // 1. Prepare isolated source collection on our dedicated connection
+    const sourcesCol = perfConn.collection('sources');
+    const eventsCol = perfConn.collection('events');
 
     await eventsCol.createIndex({ sourceId: 1, idempotencyKey: 1 }, { unique: true });
 
@@ -77,7 +85,8 @@ export async function runPerformanceBenchmark({
     console.log(`[PERF] Created temporary source ${tempSourceId}`);
 
     // 2. Start OWN dedicated server instance on an ephemeral port (NEVER port 4000)
-    const app = createApp();
+    // Pass isolated connection so the app routes use perfConn rather than the shared mongoose connection
+    const app = createApp({ connection: perfConn });
     server = await new Promise((resolve, reject) => {
       const s = app.listen(0, '127.0.0.1', () => resolve(s));
       s.on('error', reject);
@@ -152,7 +161,7 @@ export async function runPerformanceBenchmark({
     const rps = (completed / totalTimeSec).toFixed(1);
 
     const results = {
-      database: mongoose.connection.name,
+      database: perfConn.name,
       serverPort,
       totalRequests: completed,
       durationSec: totalTimeSec.toFixed(2),
@@ -175,15 +184,15 @@ export async function runPerformanceBenchmark({
       console.log('[PERF] Stopped isolated test server.');
     }
 
-    // Clean up after itself: drop database completely
-    console.log(`[PERF] Cleaning up: dropping database ${mongoose.connection.name}...`);
+    // Clean up after itself: drop database completely and close ONLY this isolated connection
+    console.log(`[PERF] Cleaning up: dropping database ${perfConn.name}...`);
     try {
-      await mongoose.connection.db.dropDatabase();
+      await perfConn.dropDatabase();
     } catch (err) {
       console.warn('[PERF] Cleanup dropDatabase warning:', err.message);
     }
-    await mongoose.disconnect();
-    console.log('[PERF] Cleaned up and disconnected.');
+    await perfConn.close();
+    console.log('[PERF] Cleaned up and closed isolated connection.');
   }
 }
 

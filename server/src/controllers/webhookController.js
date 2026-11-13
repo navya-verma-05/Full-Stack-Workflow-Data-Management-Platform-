@@ -2,11 +2,13 @@ import { ingestWebhook, replayEvent } from "../services/webhookService.js";
 
 export async function receive(req, res, next) {
   try {
+    const connection = req.app.get("dbConnection");
     const result = await ingestWebhook({
       sourceId: req.params.sourceId,
       headers: req.headers,
       rawBody: req.rawBody,
       body: req.body,
+      connection,
     });
 
     if (result.duplicate) {
